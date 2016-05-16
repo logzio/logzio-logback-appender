@@ -7,9 +7,9 @@ public class LogMessage {
 
     private byte[] message;
 
-    public LogMessage(String message) {
+    public LogMessage(byte[] message) {
 
-        this.message = message.getBytes();
+        this.message = message;
     }
 
     public byte[] getMessage() {

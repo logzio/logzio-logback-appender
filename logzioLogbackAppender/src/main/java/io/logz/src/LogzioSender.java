@@ -1,9 +1,10 @@
 package io.logz.src;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.bluejeans.common.bigqueue.BigQueue;
 import io.logz.src.exceptions.LogzioServerErrorException;
 
-import javax.net.ssl.HttpsURLConnection;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -11,7 +12,10 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.UnexpectedException;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -21,31 +25,47 @@ import java.util.concurrent.TimeUnit;
  */
 public class LogzioSender {
 
-    private final String QUEUE_DIR = System.getProperty("java.io.tmpdir") + "/logzio-logback-buffer";
+
     private final int MAX_SIZE_IN_BYTES = 3145728;  // 3 MB
-    private final String LOGZIO_URL = "https://listener.logz.io:8071";
     private final int INITIAL_WAIT_BEFORE_RETRY = 2000;
     private final int MAX_NUMBER_OF_RETRIES = 3;
 
     private final ScheduledThreadPoolExecutor tasksExecutor;
 
-    private final BigQueue logsBuffer = new BigQueue(QUEUE_DIR, "logzio-logback-appender");
-    private final File queueFile = new File(QUEUE_DIR);
-
+    private String queueDir;
+    private BigQueue logsBuffer;
+    private File queueFile;
     private URL logzioListener;
-    private HttpsURLConnection conn;
+    private HttpURLConnection conn;
 
     private String logzioToken;
+    private String logzioType;
     private int drainTimeout;
     private int fsPercentThreshold;
+    private String logzioUrl;
 
-    public LogzioSender(String logzioToken, int drainTimeout, int fsPercentThreshold) throws UnexpectedException {
+    public LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir, String logzioUrl) throws UnexpectedException {
 
         try {
             this.logzioToken = logzioToken;
+            this.logzioType = logzioType;
             this.drainTimeout = drainTimeout;
             this.fsPercentThreshold = fsPercentThreshold;
-            logzioListener = new URL(LOGZIO_URL);
+            this.logzioUrl = logzioUrl;
+
+            // Defaulting to temp dir
+            if (bufferDir == null) {
+                queueDir = System.getProperty("java.io.tmpdir") + "/logzio-logback-buffer";
+            }
+            else {
+                queueDir = bufferDir;
+            }
+
+            queueDir = System.getProperty("java.io.tmpdir") + "/logzio-logback-buffer";
+            logsBuffer = new BigQueue(queueDir, "logzio-logback-appender");
+            queueFile = new File(queueDir);
+
+            logzioListener = new URL(logzioUrl + "/?token=" + this.logzioToken + "&type=" + this.logzioType);
             initializeHttpConnection();
 
         } catch (MalformedURLException e) {
@@ -59,10 +79,11 @@ public class LogzioSender {
 
     public void start() {
 
-        tasksExecutor.scheduleWithFixedDelay(() -> run(), 0, drainTimeout, TimeUnit.SECONDS);
+        tasksExecutor.scheduleWithFixedDelay(this::run, 0, drainTimeout, TimeUnit.SECONDS);
     }
 
     public void stop() {
+
         try {
             tasksExecutor.shutdown();
             tasksExecutor.awaitTermination(20, TimeUnit.SECONDS);
@@ -88,14 +109,14 @@ public class LogzioSender {
         }
     }
 
-    private void addFormattedMessageToQueue(String message) {
+    private void addFormattedMessageToQueue(LogMessage message) {
 
         if (isEnoughDiskSpace()) {
-            logsBuffer.enqueue(message.getBytes());
+            logsBuffer.enqueue(message.getMessage());
         }
     }
 
-    public void addToQueue(Object message) {
+    public void addToQueue(ILoggingEvent message) {
 
         if (isEnoughDiskSpace()) {
             logsBuffer.enqueue(formatMessage(message).getBytes());
@@ -103,6 +124,7 @@ public class LogzioSender {
     }
 
     private boolean isEnoughDiskSpace() {
+
         boolean shouldEnqueue = false;
 
         // If we are requested not to check free space
@@ -114,7 +136,7 @@ public class LogzioSender {
             if (actualFsPercent >= fsPercentThreshold) {
 
                 System.out.println(String.format("Logz.io: Dropping logs, as FS free usable space on %s is %d percent, and the drop threshold is %d percent",
-                        QUEUE_DIR, actualFsPercent, fsPercentThreshold));
+                        queueDir, actualFsPercent, fsPercentThreshold));
             }
             else {
                 shouldEnqueue = true;
@@ -129,7 +151,7 @@ public class LogzioSender {
         // Check if we have something to drain
         if (logsBuffer.size() > 0) {
 
-            List<String> logsList = new ArrayList<String>();
+            List<LogMessage> logsList = new ArrayList<LogMessage>();
             boolean gotLogzioServerError = false;
 
             while (!logsBuffer.isEmpty() && !gotLogzioServerError) {
@@ -138,10 +160,10 @@ public class LogzioSender {
 
                 while (!exceededMaxSize && !logsBuffer.isEmpty()) {
 
-                    logsList.add(new String(logsBuffer.dequeue()));
+                    logsList.add(new LogMessage(logsBuffer.dequeue()));
 
                     // Calculate the size
-                    if (SizeMeasurer.getSizeOfStringList(logsList) >= MAX_SIZE_IN_BYTES) {
+                    if (getSizeOfLogList(logsList) >= MAX_SIZE_IN_BYTES) {
 
                         exceededMaxSize = true;
                     }
@@ -162,21 +184,33 @@ public class LogzioSender {
         }
     }
 
+    private int getSizeOfLogList(List<LogMessage> logsList) {
+
+        int totalSize = 0;
+        for (LogMessage currLog : logsList) totalSize += currLog.getSize();
+
+        return totalSize;
+    }
+
     private void initializeHttpConnection() {
 
         try {
-            conn = (HttpsURLConnection)logzioListener.openConnection();
+            conn = (HttpURLConnection)logzioListener.openConnection();
 
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void sendToLogzio(List<String> messages) throws LogzioServerErrorException {
+    private void sendToLogzio(List<LogMessage> messages) throws LogzioServerErrorException {
 
         try {
 
-            String payload = String.join("\n", messages);
+            // Now we need to join all logs, and since we work in byte[] -
+            ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();
+            for (LogMessage currMessage : messages) byteOutputStream.write(currMessage.getMessage());
+            byte[] payload = byteOutputStream.toByteArray();
+
             int currentRetrySleep = INITIAL_WAIT_BEFORE_RETRY;
 
             for (int currTry = 1; currTry <= MAX_NUMBER_OF_RETRIES; currTry++) {
@@ -185,15 +219,13 @@ public class LogzioSender {
 
                 try {
                     conn.setRequestMethod("POST");
-
-                    conn.setRequestProperty("Content-length", String.valueOf(payload.length()));
+                    conn.setRequestProperty("Content-length", String.valueOf(payload.length));
                     conn.setRequestProperty("Content-Type", "text/plain");
                     conn.setDoOutput(true);
                     conn.setDoInput(true);
 
                     DataOutputStream output = new DataOutputStream(conn.getOutputStream());
-                    output.writeBytes(payload);
-
+                    output.write(payload);
                     output.close();
 
                     switch (conn.getResponseCode()) {
@@ -203,7 +235,7 @@ public class LogzioSender {
                             shouldRetry = false;
                             break;
 
-                        case HttpURLConnection.HTTP_FORBIDDEN:
+                        case HttpURLConnection.HTTP_UNAUTHORIZED:
                             shouldRetry = false;
                             System.out.println("Logz.io: Got forbidden! Your token is not right. Unfortunately, dropping logs.");
                             break;
@@ -231,14 +263,19 @@ public class LogzioSender {
                 }
             }
 
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
     }
 
-    private String formatMessage(Object o) {
+    private String formatMessage(ILoggingEvent iLoggingEvent) {
 
-        // TODO
-        return "";
+        Date timeStamp = new Date(iLoggingEvent.getTimeStamp());
+        DateTimeFormatter formatter  = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.of("UTC"));
+
+        String logMessage = String.format("{\"@timestamp\": \"%s\", \"loglevel\": \"%s\", \"message\": \"%s\", \"logger\": \"%s\", \"thread\": \"%s\"}\n",
+                formatter.format(timeStamp.toInstant()), iLoggingEvent.getLevel().levelStr, iLoggingEvent.getFormattedMessage(), iLoggingEvent.getLoggerName(), iLoggingEvent.getThreadName());
+
+        return logMessage;
     }
 }
