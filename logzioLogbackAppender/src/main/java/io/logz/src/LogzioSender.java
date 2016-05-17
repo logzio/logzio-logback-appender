@@ -61,12 +61,10 @@ public class LogzioSender {
                 queueDir = bufferDir;
             }
 
-            queueDir = System.getProperty("java.io.tmpdir") + "/logzio-logback-buffer";
             logsBuffer = new BigQueue(queueDir, "logzio-logback-appender");
             queueFile = new File(queueDir);
 
-            logzioListener = new URL(logzioUrl + "/?token=" + this.logzioToken + "&type=" + this.logzioType);
-            initializeHttpConnection();
+            logzioListener = new URL(this.logzioUrl + "/?token=" + this.logzioToken + "&type=" + this.logzioType);
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -192,16 +190,6 @@ public class LogzioSender {
         return totalSize;
     }
 
-    private void initializeHttpConnection() {
-
-        try {
-            conn = (HttpURLConnection)logzioListener.openConnection();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     private void sendToLogzio(List<LogMessage> messages) throws LogzioServerErrorException {
 
         try {
@@ -218,6 +206,7 @@ public class LogzioSender {
                 boolean shouldRetry = true;
 
                 try {
+                    conn = (HttpURLConnection)logzioListener.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-length", String.valueOf(payload.length));
                     conn.setRequestProperty("Content-Type", "text/plain");
@@ -243,8 +232,7 @@ public class LogzioSender {
                 }
                 catch (IOException e) {
 
-                    // The connection got closed, reinitializing it
-                    initializeHttpConnection();
+                    // Just swallow, and we should retry
                 }
 
                 if (!shouldRetry) {

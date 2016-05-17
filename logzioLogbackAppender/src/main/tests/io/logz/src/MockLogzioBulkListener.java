@@ -23,15 +23,15 @@ import ch.qos.logback.classic.Level;
  * Created by roiravhon on 5/16/16.
  */
 
-public class MockHttpServer implements Closeable {
-    private final static Logger logger = LoggerFactory.getLogger(MockHttpServer.class);
+public class MockLogzioBulkListener implements Closeable {
+    private final static Logger logger = LoggerFactory.getLogger(MockLogzioBulkListener.class);
 
     private Server server;
-    private List<RequestRecord> requestRecords = new LinkedList<>();
+    private List<LogRequest> logRequests = new LinkedList<>();
     private final String host;
     private final int port;
 
-    public MockHttpServer(String host, int port) {
+    public MockLogzioBulkListener(String host, int port) {
         this.host = host;
         this.port = port;
         server = new Server(new InetSocketAddress(host, port));
@@ -41,26 +41,27 @@ public class MockHttpServer implements Closeable {
 
                 logger.info("got request with query string: {} ", request.getQueryString());
 
-                StringBuffer bodySb = new StringBuffer();
+                // Bulks are \n delimited, so handling each log separately
                 request.getReader().lines().forEach(line -> {
 
-                            // add a request record
-                            final String method = request.getMethod();
                             final String queryString = request.getQueryString();
                             final String body = line;
 
-                            requestRecords.add(new RequestRecord(queryString, body));
-                            logger.info("got logline: {} ", body);
+                            logRequests.add(new LogRequest(queryString, body));
+                            logger.info("got log: {} ", body);
                         }
                 );
 
-                logger.info("Total number of requestRecords {}", requestRecords.size());
+                logger.info("Total number of logRequests {}", logRequests.size());
+
+                // Tell Jetty we are ok, and it should return 200
+                baseRequest.setHandled(true);
             }
         });
     }
 
     public void start() throws Exception {
-        logger.info("Starting MockHttpServer");
+        logger.info("Starting MockLogzioBulkListener");
         server.start();
         logger.info(this + " started listening on {}:{}", host, port);
     }
@@ -79,33 +80,33 @@ public class MockHttpServer implements Closeable {
         stop();
     }
 
-    class RequestRecord {
+    class LogRequest {
         String queryString;
-        String body;
+        String logLine;
 
-        public RequestRecord(String queryString, String body) {
+        public LogRequest(String queryString, String logLine) {
             this.queryString = queryString;
-            this.body = body;
+            this.logLine = logLine;
         }
     }
 
     public void cleanRequests() {
-        requestRecords = new LinkedList<>();
+        logRequests = new LinkedList<>();
     }
 
-    public boolean checkForLogExistance(String token, String type, String loggerName, Level logLevel, String message) {
+    public boolean checkForLogExistence(String token, String type, String loggerName, Level logLevel, String message) {
 
-        for (RequestRecord requestRecord : requestRecords) {
+        for (LogRequest logRequest : logRequests) {
 
             boolean found = true;
 
             // First match the path
-            if (!requestRecord.queryString.equals("token=" + token + "&type=" + type)) {
+            if (!logRequest.queryString.equals("token=" + token + "&type=" + type)) {
                 found = false;
             }
             else {
 
-                JsonObject jsonObject = new JsonParser().parse(requestRecord.body).getAsJsonObject();
+                JsonObject jsonObject = new JsonParser().parse(logRequest.logLine).getAsJsonObject();
 
                 // Checking looger loglevel and message. timestamp and thread are ignored, as they can change
                 if (!jsonObject.get("logger").getAsString().equals(loggerName)) {

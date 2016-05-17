@@ -27,9 +27,8 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
     public void setToken(String logzioToken) {this.logzioToken = logzioToken;}
     public String getToken() {return logzioToken;}
 
-    public String getLogzioType() {return logzioType;}
     public void setLogzioType(String logzioType) {this.logzioType = logzioType;}
-
+    public String getLogzioType() {return logzioType;}
 
     public void setDrainTimeout(int drainTimeout) {
 
@@ -46,8 +45,8 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
     public void setFsPercentThreshold(int fsPercentThreshold) {this.fsPercentThreshold = fsPercentThreshold;}
     public int getFsPercentThreshold() {return fsPercentThreshold;}
 
-    public String getBufferDir() {return bufferDir;}
     public void setBufferDir(String bufferDir) {this.bufferDir = bufferDir;}
+    public String getBufferDir() {return bufferDir;}
 
     public void setLogzioUrl(String logzioUrl) {this.logzioUrl = logzioUrl;}
     public String getLogzioUrl() {return logzioUrl;}
