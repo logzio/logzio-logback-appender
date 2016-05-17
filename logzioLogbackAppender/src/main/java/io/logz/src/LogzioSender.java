@@ -130,7 +130,7 @@ public class LogzioSender {
             shouldEnqueue = true;
         }
         else {
-            int actualFsPercent = (int) ((queueFile.getUsableSpace() / queueFile.getTotalSpace()) * 100);
+            int actualFsPercent = (int) (((double)queueFile.getUsableSpace() / queueFile.getTotalSpace()) * 100);
             if (actualFsPercent >= fsPercentThreshold) {
 
                 System.out.println(String.format("Logz.io: Dropping logs, as FS free usable space on %s is %d percent, and the drop threshold is %d percent",
