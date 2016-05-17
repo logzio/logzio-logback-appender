@@ -1,4 +1,4 @@
-package io.logz.src.exceptions;
+package io.logz.logback.exceptions;
 
 /**
  * Created by roiravhon on 5/9/16.

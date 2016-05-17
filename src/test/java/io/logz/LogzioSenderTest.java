@@ -1,9 +1,10 @@
-package io.logz.src;
+package java.io.logz;
 
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Context;
 import com.sun.istack.internal.Nullable;
+import io.logz.logback.LogzioLogbackAppender;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;

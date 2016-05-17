@@ -1,8 +1,8 @@
-package io.logz.src;
+package io.logz.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.bluejeans.common.bigqueue.BigQueue;
-import io.logz.src.exceptions.LogzioServerErrorException;
+import io.logz.logback.exceptions.LogzioServerErrorException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;

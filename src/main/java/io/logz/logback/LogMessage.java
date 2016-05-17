@@ -1,4 +1,4 @@
-package io.logz.src;
+package io.logz.logback;
 
 /**
  * Created by roiravhon on 5/10/16.
