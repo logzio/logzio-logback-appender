@@ -16,7 +16,6 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 ### Logback Example Configuration
 ```xml
 <configuration debug="true" scan="true" scanPeriod="30 seconds">
-
     <appender name="LogzioLogbackAppender" class="io.logz.src.LogzioLogbackAppender">
         <encoder>
             <pattern>%d{yy/MM/dd HH:mm:ss} {%t} %p %c{2}: %m</pattern>
@@ -24,7 +23,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>DEBUG</level>
         </filter>
-        <token>itMoHVaqzDNfWPniGyZxACgCesUiCyZy</token>
+        <token>youlogziopersonaltokenfromsettings</token>
         <type>myAwesomeType</type>
     </appender>
 </configuration>
