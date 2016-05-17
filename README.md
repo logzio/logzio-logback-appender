@@ -9,7 +9,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 <dependency>
     <groupId>io.logz.logbackAppender</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>DEBUG</level>
         </filter>
-        <token>youlogziopersonaltokenfromsettings</token>
+        <token>yourlogziopersonaltokenfromsettings</token>
         <type>myAwesomeType</type>
     </appender>
 </configuration>
