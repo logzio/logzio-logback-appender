@@ -1,9 +1,8 @@
-package java.io.logz;
+package io.logz;
 
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Context;
-import com.sun.istack.internal.Nullable;
 import io.logz.logback.LogzioLogbackAppender;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -50,7 +49,7 @@ public class LogzioSenderTest {
         mockListener.cleanRequests();
     }
 
-    private Logger createLogger(String token, String type, String loggerName, @Nullable Integer drainTimeout, @Nullable Integer fsPercentThreshold, @Nullable String bufferDir) {
+    private Logger createLogger(String token, String type, String loggerName, Integer drainTimeout, Integer fsPercentThreshold, String bufferDir) {
 
         logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, fsPercentThreshold={}, bufferDir={}", loggerName, token, type, drainTimeout, fsPercentThreshold, bufferDir);
 

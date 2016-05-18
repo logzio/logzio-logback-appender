@@ -1,4 +1,4 @@
-package java.io.logz;
+package io.logz;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
