@@ -42,6 +42,7 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
         // Basic protection from running negative or zero timeout
         if (drainTimeoutSec < 1) {
             this.drainTimeoutSec = 1;
+            addInfo("Got unsupported drain timeout " + drainTimeoutSec + ". The timeout must be number greater then 1. I have set to 1 as fallback.");
         }
         else {
             this.drainTimeoutSec = drainTimeoutSec;
@@ -156,11 +157,17 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
         public void error(String msg) {
             addError(msg);
         }
+        public void error(String msg, Throwable e) {
+            addError(msg, e);
+        }
         public void warning(String msg) {
             addWarn(msg);
         }
         public void info(String msg) {
             addInfo(msg);
+        }
+        public void info(String msg, Throwable e) {
+            addInfo(msg, e);
         }
     }
 }

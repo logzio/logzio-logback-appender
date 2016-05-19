@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -28,9 +27,8 @@ public class LogzioSender {
 
     private final ScheduledThreadPoolExecutor tasksExecutor;
 
-    private String queueDirectory;
     private BigQueue logsBuffer;
-    private File queueFile;
+    private File queueDirectory;
     private URL logzioListenerUrl;
     private HttpURLConnection conn;
     private boolean dontCheckEnoughDiskSpace = false;
@@ -44,6 +42,8 @@ public class LogzioSender {
     private int connectTimeout;
     private boolean debug;
     private LogzioLogbackAppender.StatusReporter reporter;
+
+    private final static DateTimeFormatter formatter  = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.of("UTC"));
 
     public LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
                         String logzioUrl, int socketTimeout, int connectTimeout, boolean debug, LogzioLogbackAppender.StatusReporter reporter) throws IllegalArgumentException {
@@ -62,9 +62,8 @@ public class LogzioSender {
                 dontCheckEnoughDiskSpace = true;
             }
 
-            queueDirectory = bufferDir;
-            logsBuffer = new BigQueue(queueDirectory, "logzio-logback-appender");
-            queueFile = new File(queueDirectory);
+            logsBuffer = new BigQueue(bufferDir, "logzio-logback-appender");
+            queueDirectory = new File(bufferDir);
 
             logzioListenerUrl = new URL(this.logzioUrl + "/?token=" + this.logzioToken + "&type=" + this.logzioType);
 
@@ -101,7 +100,7 @@ public class LogzioSender {
 
         } catch (Exception e) {
             // We cant throw anything out, or the task will stop, so just swallow all
-            reporter.error("Uncaught error from Logz.io sender - " + e.getMessage());
+            reporter.error("Uncaught error from Logz.io sender", e);
         }
     }
 
@@ -120,11 +119,11 @@ public class LogzioSender {
             return true;
         }
 
-        int actualFsPercent = (int) (((double)queueFile.getUsableSpace() / queueFile.getTotalSpace()) * 100);
+        int actualFsPercent = (int) (((double) queueDirectory.getUsableSpace() / queueDirectory.getTotalSpace()) * 100);
         if (actualFsPercent >= fsPercentThreshold) {
 
             reporter.warning(String.format("Logz.io: Dropping logs, as FS free usable space on %s is %d percent, and the drop threshold is %d percent",
-                    queueDirectory, actualFsPercent, fsPercentThreshold));
+                    queueDirectory.getAbsolutePath(), actualFsPercent, fsPercentThreshold));
 
             return false;
         }
@@ -155,7 +154,7 @@ public class LogzioSender {
                     sendToLogzio(logsList);
 
                 } catch (LogzioServerErrorException e) {
-                    debug("Could not send log to logz.io: " + e.getMessage());
+                    debug("Could not send log to logz.io: ", e);
                     debug("Will retry in the next interval");
 
                     // And lets return everything to the queue
@@ -215,6 +214,7 @@ public class LogzioSender {
                 boolean shouldRetry = true;
                 int responseCode = 0;
                 String responseMessage = "";
+                IOException savedException = null;
 
                 try {
                     conn = (HttpURLConnection) logzioListenerUrl.openConnection();
@@ -241,6 +241,7 @@ public class LogzioSender {
                     shouldRetry = shouldRetry(responseCode);
                 }
                 catch (IOException e) {
+                    savedException = e;
                     debug("Got IO exception - " + e.getMessage());
                 }
 
@@ -252,6 +253,10 @@ public class LogzioSender {
 
                     if (currTry == MAX_RETRIES_ATTEMPTS) {
 
+                        if (savedException != null) {
+
+                            reporter.error("Got IO exception on the last bulk try to logz.io", savedException);
+                        }
                         // Giving up, something is broken on Logz.io side, we will try again later
                         throw new LogzioServerErrorException("Got HTTP " + responseCode + " code from logz.io, with message: " + responseMessage);
                     }
@@ -275,9 +280,14 @@ public class LogzioSender {
         }
     }
 
+    private void debug(String message, Throwable e) {
+        if (debug) {
+            reporter.info("DEBUG: " + message, e);
+        }
+    }
+
     private String formatMessage(ILoggingEvent loggingEvent) {
         Date timeStamp = new Date(loggingEvent.getTimeStamp());
-        DateTimeFormatter formatter  = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.of("UTC"));
 
         return String.format("{\"@timestamp\": \"%s\", \"loglevel\": \"%s\", \"message\": \"%s\", \"logger\": \"%s\", \"thread\": \"%s\"}\n",
                 formatter.format(timeStamp.toInstant()), loggingEvent.getLevel().levelStr, loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName());
