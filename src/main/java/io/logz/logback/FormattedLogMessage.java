@@ -1,14 +1,10 @@
 package io.logz.logback;
 
-/**
- * Created by roiravhon on 5/10/16.
- */
-public class LogMessage {
+public class FormattedLogMessage {
 
     private byte[] message;
 
-    public LogMessage(byte[] message) {
-
+    public FormattedLogMessage(byte[] message) {
         this.message = message;
     }
 
@@ -16,12 +12,7 @@ public class LogMessage {
         return message;
     }
 
-    public void setMessage(byte[] message) {
-        this.message = message;
-    }
-
     public int getSize() {
-
         return message.length;
     }
 }

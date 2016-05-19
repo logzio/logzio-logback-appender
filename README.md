@@ -34,6 +34,9 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 | ------------------ | ------------------------------------ | ----- |
 | **token**              | *None*                                 | Your logz.io token, can be found under "settings" in your account |
 | **type**               | *java*                                 | What is the [log type](http://support.logz.io/support/solutions/articles/6000103063-what-is-type-) for that appender |
-| **drainTimeout**       | *5*                                    | Once in how long we should drain the buffer (in seconds) |
-| **fsPercentThreshold** | *98*                                   | The precent of used FS space, to stop buffering. When we will reach that mark, on the FS that the buffer is in we will drop all new logs until the FS is dopping below that threhsold. set to -1 to never stop processing new logs |
+| **drainTimeoutSec**       | *5*                                    | Once in how long we should drain the buffer (in seconds) |
+| **fileSystemFullPercentThreshold** | *98*                                   | The precent of used FS space, to stop buffering. When we will reach that mark, on the FS that the buffer is in we will drop all new logs until the FS is dopping below that threhsold. set to -1 to never stop processing new logs |
 | **bufferDir**          | *System.getProperty("java.io.tmpdir")* | Where we should store the buffer |
+| **socketTimeout**       | *10 * 1000*                                    | When sending logs, what is the socket timeout |
+| **connectTimeout**       | *10 * 1000*                                    | When sending logs, what is the connection timeout |
+| **debug**       | *false*                                    | Print some debug messages to stdout to help you diagnose issues |
