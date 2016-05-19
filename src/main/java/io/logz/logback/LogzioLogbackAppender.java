@@ -3,69 +3,138 @@ package io.logz.logback;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 
-import java.rmi.UnexpectedException;
-
-/**
- * Created by roiravhon on 5/9/16.
- */
+import java.io.File;
 
 public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
 
-    // Data members
-    LogzioSender logzioSender;
+    private LogzioSender logzioSender;
 
     // User controlled variables
     private String logzioToken;
     private String logzioType = "java";
-    private int drainTimeout = 5;
-    private int fsPercentThreshold = 98;
+    private int drainTimeoutSec = 5;
+    private int fileSystemFullPercentThreshold = 98;
     private String bufferDir;
     private String logzioUrl = "https://listener.logz.io:8071";
+    private int connectTimeout = 10 * 1000;
+    private int socketTimeout = 10 * 1000;
 
+    private boolean debug = false;
 
-    // Getters and Setters
-    public void setToken(String logzioToken) {this.logzioToken = logzioToken;}
-    public String getToken() {return logzioToken;}
+    public void setToken(String logzioToken) {
+        this.logzioToken = logzioToken;
+    }
 
-    public void setLogzioType(String logzioType) {this.logzioType = logzioType;}
-    public String getLogzioType() {return logzioType;}
+    public String getToken() {
+        return logzioToken;
+    }
 
-    public void setDrainTimeout(int drainTimeout) {
+    public void setLogzioType(String logzioType) {
+        this.logzioType = logzioType;
+    }
 
-        // Basic protection from running negative timeout. 0 = no sleep at all.
-        if (drainTimeout < 0) {
-            this.drainTimeout = 0;
+    public String getLogzioType() {
+        return logzioType;
+    }
+
+    public void setDrainTimeoutSec(int drainTimeoutSec) {
+
+        // Basic protection from running negative or zero timeout
+        if (drainTimeoutSec < 1) {
+            this.drainTimeoutSec = 1;
+            addInfo("Got unsupported drain timeout " + drainTimeoutSec + ". The timeout must be number greater then 1. I have set to 1 as fallback.");
         }
         else {
-            this.drainTimeout = drainTimeout;
+            this.drainTimeoutSec = drainTimeoutSec;
         }
     }
-    public int getDrainTimeout() {return drainTimeout;}
 
-    public void setFsPercentThreshold(int fsPercentThreshold) {this.fsPercentThreshold = fsPercentThreshold;}
-    public int getFsPercentThreshold() {return fsPercentThreshold;}
+    public int getDrainTimeoutSec() {
+        return drainTimeoutSec;
+    }
 
-    public void setBufferDir(String bufferDir) {this.bufferDir = bufferDir;}
-    public String getBufferDir() {return bufferDir;}
+    public void setFileSystemFullPercentThreshold(int fileSystemFullPercentThreshold) {
+        this.fileSystemFullPercentThreshold = fileSystemFullPercentThreshold;
+    }
 
-    public void setLogzioUrl(String logzioUrl) {this.logzioUrl = logzioUrl;}
-    public String getLogzioUrl() {return logzioUrl;}
+    public int getFileSystemFullPercentThreshold() {
+        return fileSystemFullPercentThreshold;
+    }
+
+    public void setBufferDir(String bufferDir) {
+        this.bufferDir = bufferDir;
+    }
+
+    public String getBufferDir() {
+        return bufferDir;
+    }
+
+    public void setLogzioUrl(String logzioUrl) {
+        this.logzioUrl = logzioUrl;
+    }
+
+    public String getLogzioUrl() {
+        return logzioUrl;
+    }
+
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public int getSocketTimeout() {
+        return socketTimeout;
+    }
+
+    public void setSocketTimeout(int socketTimeout) {
+        this.socketTimeout = socketTimeout;
+    }
+
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
 
     @Override
     public void start() {
-
         if (logzioToken == null) {
-
-            System.out.println("Logz.io: Token is missing! Bailing out..");
+            addError("Logz.io Token is missing! Bailing out..");
             return;
         }
 
+        if (!(fileSystemFullPercentThreshold > 1 && fileSystemFullPercentThreshold <= 100)) {
+            if (fileSystemFullPercentThreshold != -1) {
+                addError("fileSystemFullPercentThreshold should be a number between 1 and 100, or -1");
+                return;
+            }
+        }
+
+        if (bufferDir != null) {
+            File bufferFile = new File(bufferDir);
+            if (!bufferFile.mkdirs()) {
+                addError("We cant write to your bufferDir location");
+                return;
+            }
+        }
+        else {
+            bufferDir = System.getProperty("java.io.tmpdir") + "/logzio-logback-buffer";
+        }
+
         try {
-            logzioSender = new LogzioSender(logzioToken, logzioType, drainTimeout, fsPercentThreshold, bufferDir, logzioUrl);
+            StatusReporter reporter = new StatusReporter();
+            logzioSender = new LogzioSender(logzioToken, logzioType, drainTimeoutSec, fileSystemFullPercentThreshold,
+                                            bufferDir, logzioUrl, socketTimeout, connectTimeout, debug, reporter);
             logzioSender.start();
         }
-        catch (UnexpectedException e) {
-            System.out.println("Logz.io: Something unexpected happened. Cant send logs. Bailing out..");
+        catch (IllegalArgumentException e) {
+            addError("Something unexpected happened while generating connection to logz.io");
+            addError("Exception: " + e.getMessage());
             e.printStackTrace();
             return;  // Not signaling super as up, we have something we cant deal with.
         }
@@ -75,14 +144,30 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     public void stop() {
-
         logzioSender.stop();
         super.stop();
     }
 
     @Override
-    protected void append(ILoggingEvent iLoggingEvent) {
+    protected void append(ILoggingEvent loggingEvent) {
+        logzioSender.send(loggingEvent);
+    }
 
-        logzioSender.addToQueue(iLoggingEvent);
+    public class StatusReporter {
+        public void error(String msg) {
+            addError(msg);
+        }
+        public void error(String msg, Throwable e) {
+            addError(msg, e);
+        }
+        public void warning(String msg) {
+            addWarn(msg);
+        }
+        public void info(String msg) {
+            addInfo(msg);
+        }
+        public void info(String msg, Throwable e) {
+            addInfo(msg, e);
+        }
     }
 }

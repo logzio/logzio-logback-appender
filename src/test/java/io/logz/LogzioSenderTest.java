@@ -17,9 +17,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
-/**
- * Created by roiravhon on 5/15/16.
- */
 public class LogzioSenderTest {
 
     private final static Logger logger = LoggerFactory.getLogger(LogzioSenderTest.class);
@@ -49,47 +46,6 @@ public class LogzioSenderTest {
         mockListener.cleanRequests();
     }
 
-    private Logger createLogger(String token, String type, String loggerName, Integer drainTimeout, Integer fsPercentThreshold, String bufferDir) {
-
-        logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, fsPercentThreshold={}, bufferDir={}", loggerName, token, type, drainTimeout, fsPercentThreshold, bufferDir);
-
-        ch.qos.logback.classic.Logger logbackLogger =  (ch.qos.logback.classic.Logger)LoggerFactory.getLogger(loggerName);
-
-        Context logbackContext = logbackLogger.getLoggerContext();
-        LogzioLogbackAppender logzioLogbackAppender = new LogzioLogbackAppender();
-        logzioLogbackAppender.setContext(logbackContext);
-        logzioLogbackAppender.setToken(token);
-        logzioLogbackAppender.setLogzioType(type);
-        logzioLogbackAppender.setLogzioUrl("http://" + LISTENER_ADDRESS + ":" + LISTENER_PORT);
-
-        if (drainTimeout != null) {
-            logzioLogbackAppender.setDrainTimeout(drainTimeout);
-        }
-        if (fsPercentThreshold != null) {
-            logzioLogbackAppender.setFsPercentThreshold(fsPercentThreshold);
-        }
-        if (bufferDir != null) {
-            logzioLogbackAppender.setBufferDir(bufferDir);
-        }
-
-        logzioLogbackAppender.start();
-
-        logbackLogger.addAppender(logzioLogbackAppender);
-        logbackLogger.setAdditive(true);
-
-        return logbackLogger;
-    }
-
-    private void recursiveDeleteDir(File file) {
-        File[] files = file.listFiles();
-        if (files != null) {
-            for (File currFile : files) {
-                recursiveDeleteDir(currFile);
-            }
-        }
-        file.delete();
-    }
-
     @Test
     public void simpleAppending() throws Exception {
 
@@ -101,7 +57,7 @@ public class LogzioSenderTest {
         String message1 = "Testing..";
         String message2 = "Warning test..";
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null);
 
         testLogger.info(message1);
         testLogger.warn(message2);
@@ -128,7 +84,7 @@ public class LogzioSenderTest {
         String message1 = "Testing first drain";
         String message2 = "And the second drain";
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null);
 
         testLogger.info(message1);
 
@@ -154,7 +110,7 @@ public class LogzioSenderTest {
         String message1 = "Sending one log";
         String message2 = "And one more important one";
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null);
 
         testLogger.info(message1);
         testLogger.error(message2);
@@ -185,7 +141,7 @@ public class LogzioSenderTest {
         try {
             assertFalse(buffer.exists());
 
-            Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, bufferDir);
+            Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, bufferDir, null);
             testLogger.info(message1);
 
             assertTrue(buffer.exists());
@@ -213,7 +169,7 @@ public class LogzioSenderTest {
         String message1 = "First log that will be dropped";
         String message2 = "And a second drop";
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, fsPercentDrop, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, fsPercentDrop, null, null);
 
         testLogger.info(message1);
         testLogger.warn(message2);
@@ -237,7 +193,7 @@ public class LogzioSenderTest {
         String message2 = "Log during drop";
         String message3 = "Log after drop";
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null);
 
         testLogger.info(message1);
 
@@ -249,7 +205,6 @@ public class LogzioSenderTest {
         assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message3));
 
         mockListener.stop();
-        Thread.sleep(2000);  // Just to make sure the listener is completely down
 
         testLogger.error(message2);
         Thread.sleep(drainTimeout * 1000 * 2);
@@ -265,4 +220,118 @@ public class LogzioSenderTest {
         assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message3));
     }
 
+    @Test
+    public void getTimeoutFromServer() throws Exception{
+
+        String token = "gettingTimeoutFromServer";
+        String type = "timeoutType";
+        String loggerName = "getTimeoutFromServer";
+        int drainTimeout = 1;
+        int serverTimeout = 1000;
+
+        String message1 = "Log that will be sent";
+        String message2 = "Log that would timeout and then being re-sent";
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, serverTimeout/2);
+
+        testLogger.info(message1);
+
+        // Sleep double time the drain timeout
+        Thread.sleep(drainTimeout * 1000 * 2);
+
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1));
+
+        mockListener.setTimeoutMillis(serverTimeout);
+        mockListener.setMakeServerTimeout(true);
+
+        testLogger.warn(message2);
+
+        Thread.sleep((2000 + serverTimeout) * 2 * 3); // Make sure we are no longer keep retrying
+
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2));
+
+        mockListener.setMakeServerTimeout(false);
+
+        Thread.sleep(drainTimeout * 1000 * 2);
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2));
+    }
+
+    @Test
+    public void getExceptionFromServer() throws Exception{
+
+        String token = "gettingExceptionFromServer";
+        String type = "exceptionType";
+        String loggerName = "getExceptionFromServer";
+        int drainTimeout = 1;
+
+        String message1 = "Log that will be sent";
+        String message2 = "Log that would get exception and be sent again";
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null);
+
+        testLogger.info(message1);
+
+        // Sleep double time the drain timeout
+        Thread.sleep(drainTimeout * 1000 * 2);
+
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1));
+
+        mockListener.setRaiseExceptionOnLog(true);
+
+        testLogger.warn(message2);
+
+        Thread.sleep(drainTimeout * 1000 * 2);
+
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2));
+
+        mockListener.setRaiseExceptionOnLog(false);
+
+        Thread.sleep(drainTimeout * 1000 * 2);
+
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2));
+    }
+
+    private Logger createLogger(String token, String type, String loggerName, Integer drainTimeout, Integer fsPercentThreshold, String bufferDir, Integer socketTimeout) {
+
+        logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, fsPercentThreshold={}, bufferDir={}", loggerName, token, type, drainTimeout, fsPercentThreshold, bufferDir);
+
+        ch.qos.logback.classic.Logger logbackLogger =  (ch.qos.logback.classic.Logger)LoggerFactory.getLogger(loggerName);
+
+        Context logbackContext = logbackLogger.getLoggerContext();
+        LogzioLogbackAppender logzioLogbackAppender = new LogzioLogbackAppender();
+        logzioLogbackAppender.setContext(logbackContext);
+        logzioLogbackAppender.setToken(token);
+        logzioLogbackAppender.setLogzioType(type);
+        logzioLogbackAppender.setLogzioUrl("http://" + LISTENER_ADDRESS + ":" + LISTENER_PORT);
+
+        if (drainTimeout != null) {
+            logzioLogbackAppender.setDrainTimeoutSec(drainTimeout);
+        }
+        if (fsPercentThreshold != null) {
+            logzioLogbackAppender.setFileSystemFullPercentThreshold(fsPercentThreshold);
+        }
+        if (bufferDir != null) {
+            logzioLogbackAppender.setBufferDir(bufferDir);
+        }
+        if (socketTimeout != null) {
+            logzioLogbackAppender.setSocketTimeout(socketTimeout);
+        }
+
+        logzioLogbackAppender.start();
+
+        logbackLogger.addAppender(logzioLogbackAppender);
+        logbackLogger.setAdditive(true);
+
+        return logbackLogger;
+    }
+
+    private void recursiveDeleteDir(File file) {
+        File[] files = file.listFiles();
+        if (files != null) {
+            for (File currFile : files) {
+                recursiveDeleteDir(currFile);
+            }
+        }
+        file.delete();
+    }
 }
