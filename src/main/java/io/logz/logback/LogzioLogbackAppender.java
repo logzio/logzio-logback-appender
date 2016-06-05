@@ -129,7 +129,8 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
         try {
             StatusReporter reporter = new StatusReporter();
             logzioSender = new LogzioSender(logzioToken, logzioType, drainTimeoutSec, fileSystemFullPercentThreshold,
-                                            bufferDir, logzioUrl, socketTimeout, connectTimeout, debug, reporter);
+                                            bufferDir, logzioUrl, socketTimeout, connectTimeout, debug,
+                                            reporter, context.getScheduledExecutorService());
             logzioSender.start();
         }
         catch (IllegalArgumentException e) {

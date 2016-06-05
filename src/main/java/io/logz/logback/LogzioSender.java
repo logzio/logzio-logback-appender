@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class LogzioSender {
@@ -24,8 +24,6 @@ public class LogzioSender {
     private final int MAX_SIZE_IN_BYTES = 3 * 1024 * 1024;  // 3 MB
     private final int INITIAL_WAIT_BEFORE_RETRY_MS = 2000;
     private final int MAX_RETRIES_ATTEMPTS = 3;
-
-    private final ScheduledThreadPoolExecutor tasksExecutor;
 
     private BigQueue logsBuffer;
     private File queueDirectory;
@@ -42,11 +40,13 @@ public class LogzioSender {
     private int connectTimeout;
     private boolean debug;
     private LogzioLogbackAppender.StatusReporter reporter;
+    private ScheduledExecutorService tasksExecutor;
 
     private final static DateTimeFormatter formatter  = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.of("UTC"));
 
     public LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
-                        String logzioUrl, int socketTimeout, int connectTimeout, boolean debug, LogzioLogbackAppender.StatusReporter reporter) throws IllegalArgumentException {
+                        String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
+                        LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor) throws IllegalArgumentException {
         try {
             this.logzioToken = logzioToken;
             this.logzioType = logzioType;
@@ -71,7 +71,9 @@ public class LogzioSender {
             throw new IllegalArgumentException("For some reason could not initialize URL. Cant recover..");
         }
 
-        tasksExecutor = new ScheduledThreadPoolExecutor(1);
+        this.tasksExecutor = tasksExecutor;
+
+        debug("Created new LogzioSender class");
     }
 
     public void start() {
@@ -80,8 +82,11 @@ public class LogzioSender {
 
     public void stop() {
         try {
+            debug("Got stop request, stopping new executions");
             tasksExecutor.shutdown();
+            debug("Waiting up to 20 seconds for tasks to finish");
             tasksExecutor.awaitTermination(20, TimeUnit.SECONDS);
+            debug("Shutting all tasks forcefully");
             tasksExecutor.shutdownNow();
 
             // Just want to make sure nothing left behind
@@ -105,7 +110,11 @@ public class LogzioSender {
     }
 
     public void send(ILoggingEvent message) {
-        enqueue(formatMessage(message).getBytes());
+
+        // Shading bigqueue logs. Its irrelevant and super verbose
+        if (! message.getLoggerName().contains("io.logz.com.bluejeans.common.bigqueue")) {
+            enqueue(formatMessage(message).getBytes());
+        }
     }
 
     private void enqueue(byte[] message) {
@@ -145,6 +154,7 @@ public class LogzioSender {
     }
 
     private void drainQueue() {
+        debug("Attempting to drain queue");
         if (!logsBuffer.isEmpty()) {
             while (!logsBuffer.isEmpty()) {
 
