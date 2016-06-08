@@ -25,22 +25,22 @@ public class LogzioSender {
     private final int INITIAL_WAIT_BEFORE_RETRY_MS = 2000;
     private final int MAX_RETRIES_ATTEMPTS = 3;
 
-    private BigQueue logsBuffer;
-    private File queueDirectory;
-    private URL logzioListenerUrl;
+    private final BigQueue logsBuffer;
+    private final File queueDirectory;
+    private final URL logzioListenerUrl;
     private HttpURLConnection conn;
     private boolean dontCheckEnoughDiskSpace = false;
 
-    private String logzioToken;
-    private String logzioType;
-    private int drainTimeout;
-    private int fsPercentThreshold;
-    private String logzioUrl;
-    private int socketTimeout;
-    private int connectTimeout;
-    private boolean debug;
-    private LogzioLogbackAppender.StatusReporter reporter;
-    private ScheduledExecutorService tasksExecutor;
+    private final String logzioToken;
+    private final String logzioType;
+    private final int drainTimeout;
+    private final int fsPercentThreshold;
+    private final String logzioUrl;
+    private final int socketTimeout;
+    private final int connectTimeout;
+    private final boolean debug;
+    private final LogzioLogbackAppender.StatusReporter reporter;
+    private final ScheduledExecutorService tasksExecutor;
 
     private final static DateTimeFormatter formatter  = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.of("UTC"));
 
