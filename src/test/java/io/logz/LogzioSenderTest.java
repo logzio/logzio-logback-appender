@@ -74,7 +74,7 @@ public class LogzioSenderTest {
     }
 
     @Test
-    public void multipleBufferDrains() throws Exception{
+    public void multipleBufferDrains() throws Exception {
 
         String token = "tokenWohooToken";
         String type = "typoosh";
@@ -101,7 +101,7 @@ public class LogzioSenderTest {
     }
 
     @Test
-    public void longDrainTimeout() throws Exception{
+    public void longDrainTimeout() throws Exception {
         String token = "soTestingIsSuperImportant";
         String type = "andItsImportantToChangeStuff";
         String loggerName = "longDrainTimeout";
@@ -158,7 +158,7 @@ public class LogzioSenderTest {
     }
 
     @Test
-    public void fsPercentDrop() throws Exception{
+    public void fsPercentDrop() throws Exception {
 
         String token = "droppingLogsDueToFSOveruse";
         String type = "droppedType";
@@ -182,7 +182,7 @@ public class LogzioSenderTest {
     }
 
     @Test
-    public void serverCrash() throws Exception{
+    public void serverCrash() throws Exception {
 
         String token = "nowWeWillCrashTheServerAndRecover";
         String type = "crashingType";
@@ -221,7 +221,7 @@ public class LogzioSenderTest {
     }
 
     @Test
-    public void getTimeoutFromServer() throws Exception{
+    public void getTimeoutFromServer() throws Exception {
 
         String token = "gettingTimeoutFromServer";
         String type = "timeoutType";
@@ -257,7 +257,7 @@ public class LogzioSenderTest {
     }
 
     @Test
-    public void getExceptionFromServer() throws Exception{
+    public void getExceptionFromServer() throws Exception {
 
         String token = "gettingExceptionFromServer";
         String type = "exceptionType";

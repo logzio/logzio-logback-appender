@@ -6,7 +6,7 @@
 
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 
     <packaging>jar</packaging>
     <name>Logz.io Logback Appender</name>
@@ -115,6 +115,7 @@
                         <includes>
                             <include>com.google.guava:guava</include>
                             <include>com.bluejeans.common:bigqueue</include>
+                            <include>com.google.code.gson:gson</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -125,6 +126,10 @@
                         <relocation>
                             <pattern>com.bluejeans.common.bigqueue</pattern>
                             <shadedPattern>io.logz.com.bluejeans.common.bigqueue</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.gson</pattern>
+                            <shadedPattern>io.logz.com.google.gson</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>
@@ -156,6 +161,11 @@
             <artifactId>guava</artifactId>
             <version>19.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.6.2</version>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
@@ -169,12 +179,5 @@
             <version>9.3.9.M1</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.6.2</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 </project>

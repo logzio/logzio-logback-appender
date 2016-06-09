@@ -2,6 +2,7 @@ package io.logz.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.bluejeans.common.bigqueue.BigQueue;
+import com.google.gson.JsonObject;
 import io.logz.logback.exceptions.LogzioServerErrorException;
 
 import java.io.ByteArrayOutputStream;
@@ -297,9 +298,16 @@ public class LogzioSender {
     }
 
     private String formatMessage(ILoggingEvent loggingEvent) {
-        Date timeStamp = new Date(loggingEvent.getTimeStamp());
 
-        return String.format("{\"@timestamp\": \"%s\", \"loglevel\": \"%s\", \"message\": \"%s\", \"logger\": \"%s\", \"thread\": \"%s\"}\n",
-                formatter.format(timeStamp.toInstant()), loggingEvent.getLevel().levelStr, loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName());
+        JsonObject logMessage = new JsonObject();
+
+        logMessage.addProperty("@timestamp", new Date(loggingEvent.getTimeStamp()).toInstant().toString());
+        logMessage.addProperty("loglevel", loggingEvent.getLevel().levelStr);
+        logMessage.addProperty("message", loggingEvent.getFormattedMessage());
+        logMessage.addProperty("logger", loggingEvent.getLoggerName());
+        logMessage.addProperty("thread", loggingEvent.getThreadName());
+
+        // Return the json, while separating lines with \n
+        return logMessage.toString() + "\n";
     }
 }
