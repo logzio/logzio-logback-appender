@@ -44,6 +44,8 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 | **bufferDir**          | *System.getProperty("java.io.tmpdir")* | Where the appender should store the buffer |
 | **socketTimeout**       | *10 * 1000*                                    | The socket timeout during log shipment |
 | **connectTimeout**       | *10 * 1000*                                    | The connection timeout during log shipment |
+| **addHostname**       | *false*                                    | Should we try and extract the hostname of the machine and add it as a field name "hostname". If we cant extract the hostname, we wont add anything. |
+| **additionalFields**       | *None*                                    | Key values you want to add to each log message. Each value that starts with "$" we will get it from an environment variable (in case of empty environment variable we will remove that field). In the format of "key=value;important=yes;environment=$VARIABLE" |
 | **debug**       | *false*                                    | Print some debug messages to stdout to help to diagnose issues |
 
 

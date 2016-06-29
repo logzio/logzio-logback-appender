@@ -2,20 +2,20 @@ package io.logz.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.bluejeans.common.bigqueue.BigQueue;
+import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
 import io.logz.logback.exceptions.LogzioServerErrorException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -31,6 +31,8 @@ public class LogzioSender {
     private final URL logzioListenerUrl;
     private HttpURLConnection conn;
     private boolean dontCheckEnoughDiskSpace = false;
+    private String hostname;
+    private Map<String, String> additionalFields;
 
     private final String logzioToken;
     private final String logzioType;
@@ -47,25 +49,38 @@ public class LogzioSender {
 
     public LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
                         String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
-                        LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor) throws IllegalArgumentException {
+                        LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor, boolean addHostname, String additionalFields) throws IllegalArgumentException {
+
+        this.logzioToken = logzioToken;
+        this.logzioType = logzioType;
+        this.drainTimeout = drainTimeout;
+        this.fsPercentThreshold = fsPercentThreshold;
+        this.logzioUrl = logzioUrl;
+        this.socketTimeout = socketTimeout;
+        this.connectTimeout = connectTimeout;
+        this.debug = debug;
+        this.reporter = reporter;
+
+        if (this.fsPercentThreshold == -1) {
+            dontCheckEnoughDiskSpace = true;
+        }
+
+        logsBuffer = new BigQueue(bufferDir, "logzio-logback-appender");
+        queueDirectory = new File(bufferDir);
+
+        if (additionalFields != null) {
+            this.additionalFields = Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields);
+        }
+
         try {
-            this.logzioToken = logzioToken;
-            this.logzioType = logzioType;
-            this.drainTimeout = drainTimeout;
-            this.fsPercentThreshold = fsPercentThreshold;
-            this.logzioUrl = logzioUrl;
-            this.socketTimeout = socketTimeout;
-            this.connectTimeout = connectTimeout;
-            this.debug = debug;
-            this.reporter = reporter;
-
-            if (this.fsPercentThreshold == -1) {
-                dontCheckEnoughDiskSpace = true;
+            if (addHostname) {
+                hostname = InetAddress.getLocalHost().getHostName();
             }
+        } catch (UnknownHostException e) {
+            reporter.error("Could not resolve host! ignoring it..", e);
+        }
 
-            logsBuffer = new BigQueue(bufferDir, "logzio-logback-appender");
-            queueDirectory = new File(bufferDir);
-
+        try {
             logzioListenerUrl = new URL(this.logzioUrl + "/?token=" + this.logzioToken + "&type=" + this.logzioType);
 
         } catch (MalformedURLException e) {
@@ -73,6 +88,7 @@ public class LogzioSender {
         }
 
         this.tasksExecutor = tasksExecutor;
+
 
         debug("Created new LogzioSender class");
     }
@@ -306,6 +322,23 @@ public class LogzioSender {
         logMessage.addProperty("message", loggingEvent.getFormattedMessage());
         logMessage.addProperty("logger", loggingEvent.getLoggerName());
         logMessage.addProperty("thread", loggingEvent.getThreadName());
+
+        if (hostname != null) {
+            logMessage.addProperty("hostname", hostname);
+        }
+        if (additionalFields != null) {
+            additionalFields.forEach((k,v) -> {
+                if (v.startsWith("$")) {
+                    String environmentValue = System.getenv(v.replace("$",""));
+                    if (environmentValue != null) {
+                        logMessage.addProperty(k, environmentValue);
+                    }
+                }
+                else {
+                    logMessage.addProperty(k, v);
+                }
+            });
+        }
 
         // Return the json, while separating lines with \n
         return logMessage.toString() + "\n";
