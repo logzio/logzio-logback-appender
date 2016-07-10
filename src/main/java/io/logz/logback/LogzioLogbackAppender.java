@@ -182,6 +182,9 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
         public void warning(String msg) {
             addWarn(msg);
         }
+        public void warning(String msg, Throwable e) {
+            addWarn(msg, e);
+        }
         public void info(String msg) {
             addInfo(msg);
         }

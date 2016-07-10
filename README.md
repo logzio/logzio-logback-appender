@@ -44,8 +44,8 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 | **bufferDir**          | *System.getProperty("java.io.tmpdir")* | Where the appender should store the buffer |
 | **socketTimeout**       | *10 * 1000*                                    | The socket timeout during log shipment |
 | **connectTimeout**       | *10 * 1000*                                    | The connection timeout during log shipment |
-| **addHostname**       | *false*                                    | Should we try and extract the hostname of the machine and add it as a field name "hostname". If we cant extract the hostname, we wont add anything. |
-| **additionalFields**       | *None*                                    | Key values you want to add to each log message. Each value that starts with "$" we will get it from an environment variable (in case of empty environment variable we will remove that field). In the format of "key=value;important=yes;environment=$VARIABLE" |
+| **addHostname**       | *false*                                    | Optional. If true, then a field named 'hostname' will be added holding the host name of the machine. If from some reason there's no defined hostname, this field won't be added |
+| **additionalFields**       | *None*                                    | Optional. Allows to add additional fields to the JSON message sent. The format is "fieldName1=fieldValue1;fieldName2=fieldValue2". You can optionally inject an environment variable value using the following format: "fieldName1=fieldValue1;fieldName2=$ENV_VAR_NAME". In that case, the environment variable should be the only value. In case the environment variable can't be resolved, the field will be omitted. |
 | **debug**       | *false*                                    | Print some debug messages to stdout to help to diagnose issues |
 
 

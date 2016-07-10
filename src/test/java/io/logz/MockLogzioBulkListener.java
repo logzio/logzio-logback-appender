@@ -127,7 +127,7 @@ public class MockLogzioBulkListener implements Closeable {
         logRequests = new LinkedList<>();
     }
 
-    public boolean checkForLogExistence(String token, String type, String loggerName, Level logLevel, String message, boolean checkHostname, String additionalFields) {
+    public boolean checkForLogExistence(String token, String type, String loggerName, Level logLevel, String message, boolean checkHostname, Map<String, String> additionalFields) {
 
         for (LogRequest logRequest : logRequests) {
 
@@ -163,43 +163,35 @@ public class MockLogzioBulkListener implements Closeable {
                         }
 
                     } catch (UnknownHostException e) {
-                        logger.error("Could not get hostname, conciser as failure!", e);
+                        logger.error("Could not get hostname, considered as failure!", e);
                         found = false;
                     }
                 }
                 else {
 
                     // Fail if we have hostname but not checking it
-                    try {
+                    if (jsonObject.get("hostname") != null) {
                         if (!jsonObject.get("hostname").getAsString().isEmpty()) {
 
                             found = false;
                         }
-                    } catch (NullPointerException e) {
-
-                        logger.debug("Did not find hostname, thats ok.");
+                    }
+                    else {
+                        logger.debug("Did not find hostname, that's ok.");
                     }
                 }
 
                 if (additionalFields != null) {
 
-                    Map<String,String> slittedAdditionalValues = Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields);
-
                     // Not foreach because I need to change "found" variable and it is not effectively final
-                    for (Map.Entry<String,String> entry : slittedAdditionalValues.entrySet()) {
+                    for (Map.Entry<String,String> entry : additionalFields.entrySet()) {
 
                         String key = entry.getKey();
                         String value = entry.getValue();
 
                         try {
-                            if (value.startsWith("$")) {
-                                if (!jsonObject.get(key).getAsString().equals(System.getenv(value.replace("$", "")))) {
-                                    found = false;
-                                }
-                            } else {
-                                if (!jsonObject.get(key).getAsString().equals(value)) {
-                                    found = false;
-                                }
+                            if (!jsonObject.get(key).getAsString().equals(value)) {
+                                found = false;
                             }
                         } catch (NullPointerException e) {
                             logger.error("Could not find key {} in log!", key);

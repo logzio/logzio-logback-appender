@@ -3,6 +3,7 @@ package io.logz;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Context;
+import com.google.common.base.Splitter;
 import io.logz.logback.LogzioLogbackAppender;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -12,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -300,9 +303,13 @@ public class LogzioSenderTest {
         int drainTimeout = 1;
 
         String message1 = "Just a log";
-        String additionalFields = "java_home=$JAVA_HOME;testing=yes";
+        Map<String,String > additionalFields = new HashMap<>();
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, additionalFields);
+        String additionalFieldsString = "java_home=$JAVA_HOME;testing=yes;message=override";
+        additionalFields.put("java_home", System.getenv("JAVA_HOME"));
+        additionalFields.put("testing", "yes");
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, additionalFieldsString);
 
         testLogger.info(message1);
 
@@ -311,7 +318,16 @@ public class LogzioSenderTest {
 
         assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields));
 
-        additionalFields = "changing=everything";
+        // Checking that the message is not getting override
+        additionalFields.put("message", "override");
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields));
+
+        additionalFields.put("message", message1);
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields));
+
+        additionalFields.clear();
+        additionalFields.put("change", "all");
+
         assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields));
     }
 

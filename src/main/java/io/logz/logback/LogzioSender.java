@@ -1,6 +1,9 @@
 package io.logz.logback;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.LoggingEvent;
 import com.bluejeans.common.bigqueue.BigQueue;
 import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
@@ -10,12 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.*;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -31,8 +29,6 @@ public class LogzioSender {
     private final URL logzioListenerUrl;
     private HttpURLConnection conn;
     private boolean dontCheckEnoughDiskSpace = false;
-    private String hostname;
-    private Map<String, String> additionalFields;
 
     private final String logzioToken;
     private final String logzioType;
@@ -44,8 +40,7 @@ public class LogzioSender {
     private final boolean debug;
     private final LogzioLogbackAppender.StatusReporter reporter;
     private final ScheduledExecutorService tasksExecutor;
-
-    private final static DateTimeFormatter formatter  = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.of("UTC"));
+    private final Map<String, String> additionalFieldsMap;
 
     public LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
                         String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
@@ -60,6 +55,7 @@ public class LogzioSender {
         this.connectTimeout = connectTimeout;
         this.debug = debug;
         this.reporter = reporter;
+        additionalFieldsMap = new HashMap<>();
 
         if (this.fsPercentThreshold == -1) {
             dontCheckEnoughDiskSpace = true;
@@ -69,15 +65,34 @@ public class LogzioSender {
         queueDirectory = new File(bufferDir);
 
         if (additionalFields != null) {
-            this.additionalFields = Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields);
+
+            JsonObject logMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread");
+
+            Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
+
+                if (logMessage.get(k) != null) {
+                    reporter.warning("You requested to add value name " + k + ", but it is reserved. Ignoring it.");
+                }
+                else {
+                    if (v.startsWith("$")) {
+                        String environmentValue = System.getenv(v.replace("$", ""));
+                        if (environmentValue != null) {
+                            additionalFieldsMap.put(k, environmentValue);
+                        }
+                    } else {
+                        additionalFieldsMap.put(k, v);
+                    }
+                }
+            });
         }
 
         try {
             if (addHostname) {
-                hostname = InetAddress.getLocalHost().getHostName();
+                String hostname = InetAddress.getLocalHost().getHostName();
+                additionalFieldsMap.put("hostname", hostname);
             }
         } catch (UnknownHostException e) {
-            reporter.error("Could not resolve host! ignoring it..", e);
+            reporter.warning("Could not resolve host! ignoring it..", e);
         }
 
         try {
@@ -315,32 +330,25 @@ public class LogzioSender {
 
     private String formatMessage(ILoggingEvent loggingEvent) {
 
-        JsonObject logMessage = new JsonObject();
-
-        logMessage.addProperty("@timestamp", new Date(loggingEvent.getTimeStamp()).toInstant().toString());
-        logMessage.addProperty("loglevel", loggingEvent.getLevel().levelStr);
-        logMessage.addProperty("message", loggingEvent.getFormattedMessage());
-        logMessage.addProperty("logger", loggingEvent.getLoggerName());
-        logMessage.addProperty("thread", loggingEvent.getThreadName());
-
-        if (hostname != null) {
-            logMessage.addProperty("hostname", hostname);
-        }
-        if (additionalFields != null) {
-            additionalFields.forEach((k,v) -> {
-                if (v.startsWith("$")) {
-                    String environmentValue = System.getenv(v.replace("$",""));
-                    if (environmentValue != null) {
-                        logMessage.addProperty(k, environmentValue);
-                    }
-                }
-                else {
-                    logMessage.addProperty(k, v);
-                }
-            });
-        }
+        JsonObject logMessage = formatMessageAsJson(loggingEvent.getTimeStamp(), loggingEvent.getLevel().levelStr,
+                loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName());
 
         // Return the json, while separating lines with \n
         return logMessage.toString() + "\n";
+    }
+
+    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName) {
+
+        JsonObject logMessage = new JsonObject();
+        logMessage.addProperty("@timestamp", new Date(timestamp).toInstant().toString());
+        logMessage.addProperty("loglevel",logLevelName);
+        logMessage.addProperty("message", message);
+        logMessage.addProperty("logger", loggerName);
+        logMessage.addProperty("thread", threadName);
+
+        if (additionalFieldsMap != null) {
+            additionalFieldsMap.forEach(logMessage::addProperty);
+        }
+        return logMessage;
     }
 }
