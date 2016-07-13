@@ -1,9 +1,6 @@
 package io.logz.logback;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.LoggingEvent;
 import com.bluejeans.common.bigqueue.BigQueue;
 import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
@@ -12,8 +9,16 @@ import io.logz.logback.exceptions.LogzioServerErrorException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.net.*;
-import java.util.*;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -65,13 +70,11 @@ public class LogzioSender {
         queueDirectory = new File(bufferDir);
 
         if (additionalFields != null) {
-
-            JsonObject logMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread");
-
+            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread");
             Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
 
-                if (logMessage.get(k) != null) {
-                    reporter.warning("You requested to add value name " + k + ", but it is reserved. Ignoring it.");
+                if (reservedFieldsTestLogMessage.get(k) != null) {
+                    reporter.warning("The field name '" + k + "' defined in additionalFields configuration can't be used since it's a reserved field name. This field will not be added to the outgoing log messages");
                 }
                 else {
                     if (v.startsWith("$")) {
@@ -84,6 +87,7 @@ public class LogzioSender {
                     }
                 }
             });
+            reporter.info("The additional fields that would be added: " + additionalFieldsMap.toString());
         }
 
         try {
@@ -92,7 +96,7 @@ public class LogzioSender {
                 additionalFieldsMap.put("hostname", hostname);
             }
         } catch (UnknownHostException e) {
-            reporter.warning("Could not resolve host! ignoring it..", e);
+            reporter.warning("The configuration addHostName was specified but the host could not be resolved, thus the field 'hostname' will not be added", e);
         }
 
         try {

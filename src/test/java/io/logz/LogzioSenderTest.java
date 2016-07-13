@@ -3,7 +3,6 @@ package io.logz;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Context;
-import com.google.common.base.Splitter;
 import io.logz.logback.LogzioLogbackAppender;
 import org.junit.AfterClass;
 import org.junit.Before;
