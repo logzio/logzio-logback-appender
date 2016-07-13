@@ -18,8 +18,9 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
     private String logzioUrl = "https://listener.logz.io:8071";
     private int connectTimeout = 10 * 1000;
     private int socketTimeout = 10 * 1000;
-
     private boolean debug = false;
+    private boolean addHostname = false;
+    private String additionalFields;
 
     public void setToken(String logzioToken) {
         this.logzioToken = logzioToken;
@@ -101,6 +102,23 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
         this.debug = debug;
     }
 
+    public String getAdditionalFields() {
+        return additionalFields;
+    }
+
+    public void setAdditionalFields(String additionalFields) {
+        this.additionalFields = additionalFields;
+    }
+
+    public boolean isAddHostname() {
+        return addHostname;
+    }
+
+    public void setAddHostname(boolean addHostname) {
+        this.addHostname = addHostname;
+    }
+
+
     @Override
     public void start() {
         if (logzioToken == null) {
@@ -130,7 +148,7 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
             StatusReporter reporter = new StatusReporter();
             logzioSender = new LogzioSender(logzioToken, logzioType, drainTimeoutSec, fileSystemFullPercentThreshold,
                                             bufferDir, logzioUrl, socketTimeout, connectTimeout, debug,
-                                            reporter, context.getScheduledExecutorService());
+                                            reporter, context.getScheduledExecutorService(), addHostname, additionalFields);
             logzioSender.start();
         }
         catch (IllegalArgumentException e) {
@@ -163,6 +181,9 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
         }
         public void warning(String msg) {
             addWarn(msg);
+        }
+        public void warning(String msg, Throwable e) {
+            addWarn(msg, e);
         }
         public void info(String msg) {
             addInfo(msg);

@@ -1,5 +1,6 @@
 package io.logz;
 
+import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.eclipse.jetty.server.Request;
@@ -14,9 +15,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import ch.qos.logback.classic.Level;
 
@@ -123,7 +127,7 @@ public class MockLogzioBulkListener implements Closeable {
         logRequests = new LinkedList<>();
     }
 
-    public boolean checkForLogExistence(String token, String type, String loggerName, Level logLevel, String message) {
+    public boolean checkForLogExistence(String token, String type, String loggerName, Level logLevel, String message, boolean checkHostname, Map<String, String> additionalFields) {
 
         for (LogRequest logRequest : logRequests) {
 
@@ -149,10 +153,55 @@ public class MockLogzioBulkListener implements Closeable {
                 if (!jsonObject.get("message").getAsString().equals(message)) {
                     found = false;
                 }
+
+                if (checkHostname) {
+                    try {
+                        String hostname = InetAddress.getLocalHost().getHostName();
+
+                        if (!jsonObject.get("hostname").getAsString().equals(hostname)) {
+                            found = false;
+                        }
+
+                    } catch (UnknownHostException e) {
+                        logger.error("Could not get hostname, considered as failure!", e);
+                        found = false;
+                    }
+                }
+                else {
+
+                    // Fail if we have hostname but not checking it
+                    if (jsonObject.get("hostname") != null) {
+                        if (!jsonObject.get("hostname").getAsString().isEmpty()) {
+
+                            found = false;
+                        }
+                    }
+                    else {
+                        logger.debug("Did not find hostname, that's ok.");
+                    }
+                }
+
+                if (additionalFields != null) {
+
+                    // Not foreach because I need to change "found" variable and it is not effectively final
+                    for (Map.Entry<String,String> entry : additionalFields.entrySet()) {
+
+                        String key = entry.getKey();
+                        String value = entry.getValue();
+
+                        try {
+                            if (!jsonObject.get(key).getAsString().equals(value)) {
+                                found = false;
+                            }
+                        } catch (NullPointerException e) {
+                            logger.error("Could not find key {} in log!", key);
+                            found = false;
+                        }
+                    }
+                }
             }
 
             if (found) {
-
                 // No need to check any further, we have found the message
                 return true;
             }

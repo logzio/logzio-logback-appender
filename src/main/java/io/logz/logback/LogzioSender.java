@@ -2,6 +2,7 @@ package io.logz.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.bluejeans.common.bigqueue.BigQueue;
+import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
 import io.logz.logback.exceptions.LogzioServerErrorException;
 
@@ -9,13 +10,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -42,30 +45,61 @@ public class LogzioSender {
     private final boolean debug;
     private final LogzioLogbackAppender.StatusReporter reporter;
     private final ScheduledExecutorService tasksExecutor;
-
-    private final static DateTimeFormatter formatter  = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").withZone(ZoneId.of("UTC"));
+    private final Map<String, String> additionalFieldsMap;
 
     public LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
                         String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
-                        LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor) throws IllegalArgumentException {
+                        LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor, boolean addHostname, String additionalFields) throws IllegalArgumentException {
+
+        this.logzioToken = logzioToken;
+        this.logzioType = logzioType;
+        this.drainTimeout = drainTimeout;
+        this.fsPercentThreshold = fsPercentThreshold;
+        this.logzioUrl = logzioUrl;
+        this.socketTimeout = socketTimeout;
+        this.connectTimeout = connectTimeout;
+        this.debug = debug;
+        this.reporter = reporter;
+        additionalFieldsMap = new HashMap<>();
+
+        if (this.fsPercentThreshold == -1) {
+            dontCheckEnoughDiskSpace = true;
+        }
+
+        logsBuffer = new BigQueue(bufferDir, "logzio-logback-appender");
+        queueDirectory = new File(bufferDir);
+
+        if (additionalFields != null) {
+            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread");
+            Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
+
+                if (reservedFieldsTestLogMessage.get(k) != null) {
+                    reporter.warning("The field name '" + k + "' defined in additionalFields configuration can't be used since it's a reserved field name. This field will not be added to the outgoing log messages");
+                }
+                else {
+                    if (v.startsWith("$")) {
+                        String environmentValue = System.getenv(v.replace("$", ""));
+                        if (environmentValue != null) {
+                            additionalFieldsMap.put(k, environmentValue);
+                        }
+                    } else {
+                        additionalFieldsMap.put(k, v);
+                    }
+                }
+            });
+            reporter.info("The additional fields that would be added: " + additionalFieldsMap.toString());
+        }
+
         try {
-            this.logzioToken = logzioToken;
-            this.logzioType = logzioType;
-            this.drainTimeout = drainTimeout;
-            this.fsPercentThreshold = fsPercentThreshold;
-            this.logzioUrl = logzioUrl;
-            this.socketTimeout = socketTimeout;
-            this.connectTimeout = connectTimeout;
-            this.debug = debug;
-            this.reporter = reporter;
-
-            if (this.fsPercentThreshold == -1) {
-                dontCheckEnoughDiskSpace = true;
+            if (addHostname) {
+                String hostname = InetAddress.getLocalHost().getHostName();
+                additionalFieldsMap.put("hostname", hostname);
             }
+        } catch (UnknownHostException e) {
+            reporter.warning("The configuration addHostName was specified but the host could not be resolved, thus the field 'hostname' will not be added", e);
+        }
 
-            logsBuffer = new BigQueue(bufferDir, "logzio-logback-appender");
-            queueDirectory = new File(bufferDir);
-
+        try {
             logzioListenerUrl = new URL(this.logzioUrl + "/?token=" + this.logzioToken + "&type=" + this.logzioType);
 
         } catch (MalformedURLException e) {
@@ -73,6 +107,7 @@ public class LogzioSender {
         }
 
         this.tasksExecutor = tasksExecutor;
+
 
         debug("Created new LogzioSender class");
     }
@@ -299,15 +334,25 @@ public class LogzioSender {
 
     private String formatMessage(ILoggingEvent loggingEvent) {
 
-        JsonObject logMessage = new JsonObject();
-
-        logMessage.addProperty("@timestamp", new Date(loggingEvent.getTimeStamp()).toInstant().toString());
-        logMessage.addProperty("loglevel", loggingEvent.getLevel().levelStr);
-        logMessage.addProperty("message", loggingEvent.getFormattedMessage());
-        logMessage.addProperty("logger", loggingEvent.getLoggerName());
-        logMessage.addProperty("thread", loggingEvent.getThreadName());
+        JsonObject logMessage = formatMessageAsJson(loggingEvent.getTimeStamp(), loggingEvent.getLevel().levelStr,
+                loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName());
 
         // Return the json, while separating lines with \n
         return logMessage.toString() + "\n";
+    }
+
+    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName) {
+
+        JsonObject logMessage = new JsonObject();
+        logMessage.addProperty("@timestamp", new Date(timestamp).toInstant().toString());
+        logMessage.addProperty("loglevel",logLevelName);
+        logMessage.addProperty("message", message);
+        logMessage.addProperty("logger", loggerName);
+        logMessage.addProperty("thread", threadName);
+
+        if (additionalFieldsMap != null) {
+            additionalFieldsMap.forEach(logMessage::addProperty);
+        }
+        return logMessage;
     }
 }
