@@ -1,6 +1,5 @@
 package io.logz;
 
-import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.eclipse.jetty.server.Request;
@@ -127,7 +126,7 @@ public class MockLogzioBulkListener implements Closeable {
         logRequests = new LinkedList<>();
     }
 
-    public boolean checkForLogExistence(String token, String type, String loggerName, Level logLevel, String message, boolean checkHostname, Map<String, String> additionalFields) {
+    public boolean checkForLogExistence(String token, String type, String loggerName, Level logLevel, String message, boolean checkHostname, Map<String, String> additionalFields, Throwable exception) {
 
         for (LogRequest logRequest : logRequests) {
 
@@ -198,6 +197,10 @@ public class MockLogzioBulkListener implements Closeable {
                             found = false;
                         }
                     }
+                }
+
+                if (exception != null) {
+                    found = jsonObject.get("exception").toString().replace("\\", "").contains(exception.getMessage());
                 }
             }
 
