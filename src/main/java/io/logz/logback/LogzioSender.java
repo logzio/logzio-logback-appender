@@ -1,6 +1,9 @@
 package io.logz.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.IThrowableProxy;
+import ch.qos.logback.classic.spi.StackTraceElementProxy;
+import ch.qos.logback.classic.spi.ThrowableProxy;
 import com.bluejeans.common.bigqueue.BigQueue;
 import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
@@ -19,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -70,7 +74,7 @@ public class LogzioSender {
         queueDirectory = new File(bufferDir);
 
         if (additionalFields != null) {
-            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread");
+            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread", Optional.empty());
             Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
 
                 if (reservedFieldsTestLogMessage.get(k) != null) {
@@ -335,13 +339,13 @@ public class LogzioSender {
     private String formatMessage(ILoggingEvent loggingEvent) {
 
         JsonObject logMessage = formatMessageAsJson(loggingEvent.getTimeStamp(), loggingEvent.getLevel().levelStr,
-                loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName());
+                loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName(), Optional.ofNullable(loggingEvent.getThrowableProxy()));
 
         // Return the json, while separating lines with \n
         return logMessage.toString() + "\n";
     }
 
-    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName) {
+    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName, Optional<IThrowableProxy> throwableProxy) {
 
         JsonObject logMessage = new JsonObject();
         logMessage.addProperty("@timestamp", new Date(timestamp).toInstant().toString());
@@ -350,9 +354,30 @@ public class LogzioSender {
         logMessage.addProperty("logger", loggerName);
         logMessage.addProperty("thread", threadName);
 
+        if (throwableProxy.isPresent()) {
+            logMessage.addProperty("exception", formatThrowableProxy(throwableProxy.get()));
+        }
+
         if (additionalFieldsMap != null) {
             additionalFieldsMap.forEach(logMessage::addProperty);
         }
         return logMessage;
+    }
+
+    private String formatThrowableProxy(IThrowableProxy throwableProxy) {
+
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append(throwableProxy.getClassName()).append(": ").append(throwableProxy.getMessage()).append('\n');
+            for (StackTraceElementProxy stackTraceElementProxy : throwableProxy.getStackTraceElementProxyArray()) {
+
+                sb.append("  ").append(stackTraceElementProxy.getSTEAsString()).append('\n');
+            }
+
+            return sb.toString();
+        } catch (Exception e) {
+            reporter.warning("Could not format exception!", e);
+            return "";
+        }
     }
 }
