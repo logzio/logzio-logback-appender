@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -338,13 +339,13 @@ public class LogzioSender {
     private String formatMessage(ILoggingEvent loggingEvent) {
 
         JsonObject logMessage = formatMessageAsJson(loggingEvent.getTimeStamp(), loggingEvent.getLevel().levelStr,
-                loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName(), loggingEvent.getThrowableProxy());
+                loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName(), Optional.ofNullable(loggingEvent.getThrowableProxy()));
 
         // Return the json, while separating lines with \n
         return logMessage.toString() + "\n";
     }
 
-    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName, IThrowableProxy throwableProxy) {
+    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName, Optional<IThrowableProxy> throwableProxy) {
 
         JsonObject logMessage = new JsonObject();
         logMessage.addProperty("@timestamp", new Date(timestamp).toInstant().toString());
@@ -353,8 +354,8 @@ public class LogzioSender {
         logMessage.addProperty("logger", loggerName);
         logMessage.addProperty("thread", threadName);
 
-        if (throwableProxy != null) {
-            logMessage.addProperty("exception", formatThrowableProxy(throwableProxy));
+        if (throwableProxy.isPresent()) {
+            logMessage.addProperty("exception", formatThrowableProxy(throwableProxy.get()));
         }
 
         if (additionalFieldsMap != null) {
@@ -375,6 +376,7 @@ public class LogzioSender {
 
             return sb.toString();
         } catch (Exception e) {
+            reporter.warning("Could not format exception!", e);
             return "";
         }
     }
