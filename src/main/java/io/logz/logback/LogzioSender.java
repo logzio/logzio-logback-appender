@@ -74,7 +74,7 @@ public class LogzioSender {
         queueDirectory = new File(bufferDir);
 
         if (additionalFields != null) {
-            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread", null);
+            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread", Optional.empty());
             Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
 
                 if (reservedFieldsTestLogMessage.get(k) != null) {
