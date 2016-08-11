@@ -23,14 +23,11 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
     <!-- Use shutdownHook so that we can close gracefully and finish the log drain -->
     <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
     <appender name="LogzioLogbackAppender" class="io.logz.logback.LogzioLogbackAppender">
-        <encoder>
-            <pattern>%d{yy/MM/dd HH:mm:ss} {%t} %p %c{2}: %m</pattern>
-        </encoder>
+        <token>yourlogziopersonaltokenfromsettings</token>
+        <logzioType>myAwesomeType</logzioType>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>INFO</level>
         </filter>
-        <token>yourlogziopersonaltokenfromsettings</token>
-        <logzioType>myAwesomeType</logzioType>
     </appender>
 </configuration>
 ```
