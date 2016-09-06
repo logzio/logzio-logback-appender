@@ -126,7 +126,7 @@ public class MockLogzioBulkListener implements Closeable {
         logRequests = new LinkedList<>();
     }
 
-    public boolean checkForLogExistence(String token, String type, String loggerName, Level logLevel, String message, boolean checkHostname, Map<String, String> additionalFields, Throwable exception) {
+    public boolean checkForLogExistence(String token, String type, String loggerName, Level logLevel, String message, boolean checkHostname, Map<String, String> additionalFields, Throwable exception, Map<String, String> mdcProperties) {
 
         for (LogRequest logRequest : logRequests) {
 
@@ -201,6 +201,16 @@ public class MockLogzioBulkListener implements Closeable {
 
                 if (exception != null) {
                     found = jsonObject.get("exception").toString().replace("\\", "").contains(exception.getMessage());
+                }
+
+                if (mdcProperties != null) {
+
+                    for (Map.Entry<String,String> entry: mdcProperties.entrySet()) {
+
+                        if (!jsonObject.get(entry.getKey()).toString().contains(entry.getValue())) {
+                            found = false;
+                        }
+                    }
                 }
             }
 

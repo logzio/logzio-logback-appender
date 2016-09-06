@@ -3,7 +3,6 @@ package io.logz.logback;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
-import ch.qos.logback.classic.spi.ThrowableProxy;
 import com.bluejeans.common.bigqueue.BigQueue;
 import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
@@ -74,7 +73,7 @@ public class LogzioSender {
         queueDirectory = new File(bufferDir);
 
         if (additionalFields != null) {
-            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread", Optional.empty());
+            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread", Optional.empty(), Optional.empty());
             Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
 
                 if (reservedFieldsTestLogMessage.get(k) != null) {
@@ -339,13 +338,15 @@ public class LogzioSender {
     private String formatMessage(ILoggingEvent loggingEvent) {
 
         JsonObject logMessage = formatMessageAsJson(loggingEvent.getTimeStamp(), loggingEvent.getLevel().levelStr,
-                loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName(), Optional.ofNullable(loggingEvent.getThrowableProxy()));
+                loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName(),
+                Optional.ofNullable(loggingEvent.getThrowableProxy()), Optional.ofNullable(loggingEvent.getMDCPropertyMap()));
 
         // Return the json, while separating lines with \n
         return logMessage.toString() + "\n";
     }
 
-    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName, Optional<IThrowableProxy> throwableProxy) {
+    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName,
+                                           Optional<IThrowableProxy> throwableProxy, Optional<Map<String, String>> mdcPropertyMap) {
 
         JsonObject logMessage = new JsonObject();
         logMessage.addProperty("@timestamp", new Date(timestamp).toInstant().toString());
@@ -356,6 +357,10 @@ public class LogzioSender {
 
         if (throwableProxy.isPresent()) {
             logMessage.addProperty("exception", formatThrowableProxy(throwableProxy.get()));
+        }
+
+        if (mdcPropertyMap.isPresent()) {
+            mdcPropertyMap.get().forEach(logMessage::addProperty);
         }
 
         if (additionalFieldsMap != null) {

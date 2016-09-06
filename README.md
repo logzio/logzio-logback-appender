@@ -12,7 +12,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 </dependency>
 ```
 
@@ -59,6 +59,24 @@ public class LogzioLogbackExample {
         
         logger.info("Testing logz.io!");
         logger.warn("Winter is coming");
+    }
+}
+```
+
+### MDC
+Each key value you will add to MDC will be added to each log line as long as the thread alive. No further configuration needed.
+```java
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
+public class LogzioLogbackExample {
+
+    public static void main(String[] args) {
+        Logger logger = LoggerFactory.getLogger(LogzioLogbackExample.class);
+
+        MDC.put("Key", "Value");
+        logger.info("This log will hold the MDC data as well");
     }
 }
 ```
