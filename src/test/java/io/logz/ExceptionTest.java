@@ -16,11 +16,11 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by roiravhon on 9/11/16.
  */
-public class ExceptionTester {
+public class ExceptionTest {
 
     // This class is separate, since we are checking stacktrace here and need everything to be exactly on the same line
 
-    private final static Logger logger = LoggerFactory.getLogger(ExceptionTester.class);
+    private final static Logger logger = LoggerFactory.getLogger(ExceptionTest.class);
     private static final String LISTENER_ADDRESS = "localhost";
     private final static MockLogzioBulkListener mockListener = new MockLogzioBulkListener(LISTENER_ADDRESS, 8070);
 
@@ -101,11 +101,11 @@ public class ExceptionTester {
         String message1 = "Any line change here can cause the test to break";
 
         String exactException = "java.lang.RuntimeException: Got NPE!\n" +
-                "\tat io.logz.ExceptionTester$ExceptionGenerator.generateNPE(ExceptionTester.java:38)\n" +
-                "\tat io.logz.ExceptionTester$MyRunner.run(ExceptionTester.java:61)\n" +
+                "\tat io.logz.ExceptionTest$ExceptionGenerator.generateNPE(ExceptionTest.java:38)\n" +
+                "\tat io.logz.ExceptionTest$MyRunner.run(ExceptionTest.java:61)\n" +
                 "\tat java.lang.Thread.run(Thread.java:745)\n" +
                 "Caused by: java.lang.NullPointerException: null\n" +
-                "\tat io.logz.ExceptionTester$ExceptionGenerator.generateNPE(ExceptionTester.java:36)\n" +
+                "\tat io.logz.ExceptionTest$ExceptionGenerator.generateNPE(ExceptionTest.java:36)\n" +
                 "\t... 2 common frames omitted\n";
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, null);
