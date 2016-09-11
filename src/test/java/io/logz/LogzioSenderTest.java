@@ -68,11 +68,11 @@ public class LogzioSenderTest {
         // Sleep double time the drain timeout
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null));
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
 
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message2, false, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message1, false, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message2, false, null, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message1, false, null, null, null, null));
 
     }
 
@@ -94,13 +94,13 @@ public class LogzioSenderTest {
         // Sleep double time the drain timeout
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
 
         testLogger.warn(message2);
 
         Thread.sleep(drainTimeout * 1000 * 2);
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
     }
 
     @Test
@@ -118,14 +118,14 @@ public class LogzioSenderTest {
         testLogger.info(message1);
         testLogger.error(message2);
 
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null, null));
 
         // Sleep the drain timeout + 1 second
         Thread.sleep(drainTimeout * 1000 + 1000);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null));
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null, null));
     }
 
     @Test
@@ -180,8 +180,8 @@ public class LogzioSenderTest {
         // Sleep double time the drain timeout
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
     }
 
     @Test
@@ -203,15 +203,15 @@ public class LogzioSenderTest {
         // Sleep double time the drain timeout
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message3, false, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message3, false, null, null, null, null));
 
         mockListener.stop();
 
         testLogger.error(message2);
         Thread.sleep(drainTimeout * 1000 * 2);
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null, null));
 
         mockListener.start();
 
@@ -219,8 +219,8 @@ public class LogzioSenderTest {
 
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null));
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message3, false, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message3, false, null, null, null, null));
     }
 
     @Test
@@ -242,7 +242,7 @@ public class LogzioSenderTest {
         // Sleep double time the drain timeout
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
 
         mockListener.setTimeoutMillis(serverTimeout);
         mockListener.setMakeServerTimeout(true);
@@ -251,12 +251,12 @@ public class LogzioSenderTest {
 
         Thread.sleep((2000 + serverTimeout) * 2 * 3); // Make sure we are no longer keep retrying
 
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
 
         mockListener.setMakeServerTimeout(false);
 
         Thread.sleep(drainTimeout * 1000 * 2);
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
     }
 
     @Test
@@ -277,7 +277,7 @@ public class LogzioSenderTest {
         // Sleep double time the drain timeout
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
 
         mockListener.setRaiseExceptionOnLog(true);
 
@@ -285,13 +285,13 @@ public class LogzioSenderTest {
 
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
 
         mockListener.setRaiseExceptionOnLog(false);
 
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
     }
 
     @Test
@@ -316,19 +316,19 @@ public class LogzioSenderTest {
         // Sleep double time the drain timeout
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null, null));
 
         // Checking that the message is not getting override
         additionalFields.put("message", "override");
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null, null));
 
         additionalFields.put("message", message1);
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null, null));
 
         additionalFields.clear();
         additionalFields.put("change", "all");
 
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null, null));
     }
 
     @Test
@@ -348,8 +348,8 @@ public class LogzioSenderTest {
         // Sleep double time the drain timeout
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, true, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, true, null, null, null, null));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
     }
 
     @Test
@@ -376,7 +376,7 @@ public class LogzioSenderTest {
         // Sleep double time the drain timeout
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, exception, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, exception, null, null));
     }
 
     @Test
@@ -404,15 +404,15 @@ public class LogzioSenderTest {
         // Sleep double time the drain timeout
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null));
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, mdcKv));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
+        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, mdcKv, null));
 
         // Override different value
         mdcKv.put(mdcKey, mdcKey);
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, mdcKv));
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, mdcKv, null));
     }
 
-    private Logger createLogger(String token, String type, String loggerName, Integer drainTimeout, Integer fsPercentThreshold, String bufferDir, Integer socketTimeout, boolean addHostname, String additionalFields) {
+    public static Logger createLogger(String token, String type, String loggerName, Integer drainTimeout, Integer fsPercentThreshold, String bufferDir, Integer socketTimeout, boolean addHostname, String additionalFields) {
 
         logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, fsPercentThreshold={}, bufferDir={}, socketTimeout={}, addHostname={}, additionalFields={}",
                 loggerName, token, type, drainTimeout, fsPercentThreshold, bufferDir, socketTimeout, addHostname, additionalFields);

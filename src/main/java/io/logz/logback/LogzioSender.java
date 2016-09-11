@@ -1,5 +1,6 @@
 package io.logz.logback;
 
+import ch.qos.logback.classic.pattern.ThrowableProxyConverter;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.classic.spi.StackTraceElementProxy;
@@ -17,6 +18,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +51,9 @@ public class LogzioSender {
     private final LogzioLogbackAppender.StatusReporter reporter;
     private final ScheduledExecutorService tasksExecutor;
     private final Map<String, String> additionalFieldsMap;
+
+    private final List<String> throwableProxyConversionOptions = Arrays.asList("full");
+    private final ThrowableProxyConverter throwableProxyConverter;
 
     public LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
                         String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
@@ -111,12 +116,16 @@ public class LogzioSender {
 
         this.tasksExecutor = tasksExecutor;
 
+        throwableProxyConverter = new ThrowableProxyConverter();
+        throwableProxyConverter.setOptionList(throwableProxyConversionOptions);
+        throwableProxyConverter.start();
 
         debug("Created new LogzioSender class");
     }
 
     public void start() {
         tasksExecutor.scheduleWithFixedDelay(this::drainQueueAndSend, 0, drainTimeout, TimeUnit.SECONDS);
+        tasksExecutor.scheduleWithFixedDelay(logsBuffer::gc, 0, 30, TimeUnit.SECONDS);
     }
 
     public void stop() {
@@ -339,14 +348,14 @@ public class LogzioSender {
 
         JsonObject logMessage = formatMessageAsJson(loggingEvent.getTimeStamp(), loggingEvent.getLevel().levelStr,
                 loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName(),
-                Optional.ofNullable(loggingEvent.getThrowableProxy()), Optional.ofNullable(loggingEvent.getMDCPropertyMap()));
+                Optional.ofNullable(loggingEvent.getMDCPropertyMap()), Optional.ofNullable(loggingEvent));
 
         // Return the json, while separating lines with \n
         return logMessage.toString() + "\n";
     }
 
     private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName,
-                                           Optional<IThrowableProxy> throwableProxy, Optional<Map<String, String>> mdcPropertyMap) {
+                                           Optional<Map<String, String>> mdcPropertyMap, Optional<ILoggingEvent> loggingEvent) {
 
         JsonObject logMessage = new JsonObject();
         logMessage.addProperty("@timestamp", new Date(timestamp).toInstant().toString());
@@ -355,8 +364,10 @@ public class LogzioSender {
         logMessage.addProperty("logger", loggerName);
         logMessage.addProperty("thread", threadName);
 
-        if (throwableProxy.isPresent()) {
-            logMessage.addProperty("exception", formatThrowableProxy(throwableProxy.get()));
+        if (loggingEvent.isPresent()) {
+            if (loggingEvent.get().getThrowableProxy() != null) {
+                logMessage.addProperty("exception", throwableProxyConverter.convert(loggingEvent.get()));
+            }
         }
 
         if (mdcPropertyMap.isPresent()) {
@@ -367,22 +378,5 @@ public class LogzioSender {
             additionalFieldsMap.forEach(logMessage::addProperty);
         }
         return logMessage;
-    }
-
-    private String formatThrowableProxy(IThrowableProxy throwableProxy) {
-
-        try {
-            StringBuilder sb = new StringBuilder();
-            sb.append(throwableProxy.getClassName()).append(": ").append(throwableProxy.getMessage()).append('\n');
-            for (StackTraceElementProxy stackTraceElementProxy : throwableProxy.getStackTraceElementProxyArray()) {
-
-                sb.append("  ").append(stackTraceElementProxy.getSTEAsString()).append('\n');
-            }
-
-            return sb.toString();
-        } catch (Exception e) {
-            reporter.warning("Could not format exception!", e);
-            return "";
-        }
     }
 }

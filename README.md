@@ -81,6 +81,20 @@ public class LogzioLogbackExample {
 }
 ```
 
+### Release notes
+ - 1.0.5
+   - Add MDC support
+   - Replace exception handling to use logbacks own instead of implementing alone
+   - Periodically calls BigQueue GC function so we can release files on local disk
+ - 1.0.4
+   - If you logged a throwable as well, we will put it inside a field named "exception"
+ - 1.0.3
+   - Addional fields support
+   - Add hostname to logs support
+ - 1.0.0 - 1.0.2
+   - Initial releases
+   
+
 ### Contribution
  - Fork
  - Code
