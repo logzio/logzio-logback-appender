@@ -404,8 +404,14 @@ public class LogzioSenderTest {
         // Sleep double time the drain timeout
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
         assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, mdcKv, null));
+
+        mdcKv.put("logger", "Doesn't matter");
+
+        // This should fail because we dont allow collision with our base fields
+        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, mdcKv, null));
+
+        mdcKv.clear();
 
         // Override different value
         mdcKv.put(mdcKey, mdcKey);

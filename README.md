@@ -81,6 +81,15 @@ public class LogzioLogbackExample {
 }
 ```
 
+Will send a log to Logz.io that looks like this:
+```
+{
+    "message": "This log will hold the MDC data as well",
+    "Key": "Value",
+    ... (all other fields you used to get)
+}
+```
+
 ### Release notes
  - 1.0.5
    - Add MDC support

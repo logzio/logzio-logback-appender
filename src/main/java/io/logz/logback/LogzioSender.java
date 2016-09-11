@@ -125,7 +125,7 @@ public class LogzioSender {
 
     public void start() {
         tasksExecutor.scheduleWithFixedDelay(this::drainQueueAndSend, 0, drainTimeout, TimeUnit.SECONDS);
-        tasksExecutor.scheduleWithFixedDelay(logsBuffer::gc, 0, 30, TimeUnit.SECONDS);
+        tasksExecutor.scheduleWithFixedDelay(this::gcBigQueue, 0, 30, TimeUnit.SECONDS);
     }
 
     public void stop() {
@@ -144,6 +144,15 @@ public class LogzioSender {
 
             // Reset the interrupt flag
             Thread.currentThread().interrupt();
+        }
+    }
+
+    public void gcBigQueue() {
+        try {
+            logsBuffer.gc();
+        } catch (Exception e) {
+            // We cant throw anything out, or the task will stop, so just swallow all
+            reporter.error("Uncaught error from BigQueue.gc()", e);
         }
     }
 
@@ -358,6 +367,12 @@ public class LogzioSender {
                                            Optional<Map<String, String>> mdcPropertyMap, Optional<ILoggingEvent> loggingEvent) {
 
         JsonObject logMessage = new JsonObject();
+
+        // Adding MDC first, as I dont want it to collide with any one of the following fields
+        if (mdcPropertyMap.isPresent()) {
+            mdcPropertyMap.get().forEach(logMessage::addProperty);
+        }
+
         logMessage.addProperty("@timestamp", new Date(timestamp).toInstant().toString());
         logMessage.addProperty("loglevel",logLevelName);
         logMessage.addProperty("message", message);
@@ -368,10 +383,6 @@ public class LogzioSender {
             if (loggingEvent.get().getThrowableProxy() != null) {
                 logMessage.addProperty("exception", throwableProxyConverter.convert(loggingEvent.get()));
             }
-        }
-
-        if (mdcPropertyMap.isPresent()) {
-            mdcPropertyMap.get().forEach(logMessage::addProperty);
         }
 
         if (additionalFieldsMap != null) {
