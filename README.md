@@ -12,7 +12,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 </dependency>
 ```
 
@@ -62,6 +62,47 @@ public class LogzioLogbackExample {
     }
 }
 ```
+
+### MDC
+Each key value you will add to MDC will be added to each log line as long as the thread alive. No further configuration needed.
+```java
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
+public class LogzioLogbackExample {
+
+    public static void main(String[] args) {
+        Logger logger = LoggerFactory.getLogger(LogzioLogbackExample.class);
+
+        MDC.put("Key", "Value");
+        logger.info("This log will hold the MDC data as well");
+    }
+}
+```
+
+Will send a log to Logz.io that looks like this:
+```
+{
+    "message": "This log will hold the MDC data as well",
+    "Key": "Value",
+    ... (all other fields you used to get)
+}
+```
+
+### Release notes
+ - 1.0.5
+   - Add MDC support
+   - Replace exception handling to use logbacks own instead of implementing alone
+   - Periodically calls BigQueue GC function so we can release files on local disk
+ - 1.0.4
+   - If you logged a throwable as well, we will put it inside a field named "exception"
+ - 1.0.3
+   - Addional fields support
+   - Add hostname to logs support
+ - 1.0.0 - 1.0.2
+   - Initial releases
+   
 
 ### Contribution
  - Fork
