@@ -29,8 +29,9 @@ public abstract class BaseTest {
     public void startMockListener() throws Exception {
         int attempts = 1;
         while (attempts <= 3) {
+            int availablePort = -1;
             try {
-                int availablePort = new ServerSocket(0).getLocalPort();;
+                availablePort = new ServerSocket(0).getLocalPort();;
                 mockListener = new MockLogzioBulkListener(LISTENER_ADDRESS, availablePort);
                 logger.info("Starting Mock listener on port {}", availablePort);
                 mockListener.start();
@@ -38,7 +39,9 @@ public abstract class BaseTest {
                 break;
             } catch (BindException e) {
                 if (attempts++ == 3) {
-                    throw new RuntimeException("Failed to get a non busy port", e);
+                    throw new RuntimeException("Failed to get a non busy port: "+availablePort, e);
+                } else {
+                    logger.info("Failed to start mock listener on port {}", availablePort);
                 }
             }
         }
