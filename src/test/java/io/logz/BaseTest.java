@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.util.Map;
 import java.util.Optional;
@@ -26,11 +27,21 @@ public abstract class BaseTest {
 
     @Before
     public void startMockListener() throws Exception {
-        int availablePort = new ServerSocket(0).getLocalPort();;
-        mockListener = new MockLogzioBulkListener(LISTENER_ADDRESS, availablePort);
-        logger.info("Starting Mock listener on port {}", availablePort);
-        mockListener.start();
-        port = availablePort;
+        int attempts = 1;
+        while (attempts <= 3) {
+            try {
+                int availablePort = new ServerSocket(0).getLocalPort();;
+                mockListener = new MockLogzioBulkListener(LISTENER_ADDRESS, availablePort);
+                logger.info("Starting Mock listener on port {}", availablePort);
+                mockListener.start();
+                port = availablePort;
+                break;
+            } catch (BindException e) {
+                if (attempts++ == 3) {
+                    throw new RuntimeException("Failed to get a non busy port", e);
+                }
+            }
+        }
     }
 
     @After
