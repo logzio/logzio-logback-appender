@@ -1,11 +1,13 @@
 package io.logz;
 
+import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.eclipse.jetty.io.RuntimeIOException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,20 +16,19 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
-
-import ch.qos.logback.classic.Level;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MockLogzioBulkListener implements Closeable {
     private final static Logger logger = LoggerFactory.getLogger(MockLogzioBulkListener.class);
 
     private Server server;
-    private List<LogRequest> logRequests = new LinkedList<>();
+    private Queue<LogRequest> logRequests = new ConcurrentLinkedQueue<>();
     private final String host;
     private final int port;
 
@@ -35,7 +36,7 @@ public class MockLogzioBulkListener implements Closeable {
     private boolean raiseExceptionOnLog = false;
     private int timeoutMillis = 10000;
 
-    public void setRaiseExceptionOnLog(boolean raiseExceptionOnLog) {
+    public void setFailWithServerError(boolean raiseExceptionOnLog) {
         this.raiseExceptionOnLog = raiseExceptionOnLog;
     }
     public void setMakeServerTimeout(boolean makeServerTimeout) {
@@ -53,7 +54,7 @@ public class MockLogzioBulkListener implements Closeable {
             @Override
             public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
-                logger.info("got request with query string: {} ", request.getQueryString());
+                logger.debug("got request with query string: {} ({})", request.getQueryString(), this);
 
                 if (makeServerTimeout) {
 
@@ -68,32 +69,46 @@ public class MockLogzioBulkListener implements Closeable {
                 }
 
                 // Bulks are \n delimited, so handling each log separately
+
                 request.getReader().lines().forEach(line -> {
 
                         if (raiseExceptionOnLog) {
                             throw new RuntimeException();
                         }
 
-                        final String queryString = request.getQueryString();
-                        final String body = line;
+                        String queryString = request.getQueryString();
 
-                        logRequests.add(new LogRequest(queryString, body));
-                        logger.info("got log: {} ", body);
-                    }
+                        logRequests.add(new LogRequest(queryString, line));
+                            logger.debug("got log: {} ", line);
+                        }
                 );
 
-                logger.info("Total number of logRequests {}", logRequests.size());
+                logger.debug("Total number of logRequests {} ({})", logRequests.size(), logRequests);
 
                 // Tell Jetty we are ok, and it should return 200
                 baseRequest.setHandled(true);
             }
         });
+        logger.debug("Created a mock listener ("+this+")");
     }
 
     public void start() throws Exception {
         logger.info("Starting MockLogzioBulkListener");
         server.start();
-        logger.info(this + " started listening on {}:{}", host, port);
+        int attempts = 1;
+        while (!server.isRunning()) {
+            logger.info("Server has not started yet");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw Throwables.propagate(e);
+            }
+            attempts++;
+            if (attempts > 10) {
+                throw new RuntimeIOException("Failed to start after multiple attempts");
+            }
+        }
+        logger.info("Started listening on {}:{} ({})", host, port, this);
     }
 
     public void stop() {
@@ -102,7 +117,20 @@ public class MockLogzioBulkListener implements Closeable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        logger.info(this + " stopped listening on {}:{}", host, port);
+        int attempts = 1;
+        while (server.isRunning()) {
+            logger.info("Server has not stopped yet");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw Throwables.propagate(e);
+            }
+            attempts++;
+            if (attempts > 10) {
+                throw new RuntimeIOException("Failed to stop after multiple attempts");
+            }
+        }
+        logger.info("Stopped listening on {}:{} ({})", host, port, this);
     }
 
     @Override
@@ -110,120 +138,83 @@ public class MockLogzioBulkListener implements Closeable {
         stop();
     }
 
+    public Collection<LogRequest> getReceivedMsgs() {
+        return Collections.unmodifiableCollection(logRequests);
+    }
 
-
-    class LogRequest {
-        String queryString;
-        String logLine;
+    public static class LogRequest {
+        private final String token;
+        private final String type;
+        private final JsonObject jsonObject;
 
         public LogRequest(String queryString, String logLine) {
-            this.queryString = queryString;
-            this.logLine = logLine;
-        }
-    }
-
-    public void cleanRequests() {
-        logRequests = new LinkedList<>();
-    }
-
-    public boolean checkForLogExistence(String token, String type, String loggerName, Level logLevel, String message, boolean checkHostname, Map<String, String> additionalFields, Throwable exception, Map<String, String> mdcProperties, String exactException) {
-
-        for (LogRequest logRequest : logRequests) {
-
-            boolean found = true;
-
-            // First match the path
-            if (!logRequest.queryString.equals("token=" + token + "&type=" + type)) {
-                found = false;
-            }
-            else {
-
-                JsonObject jsonObject = new JsonParser().parse(logRequest.logLine).getAsJsonObject();
-
-                // Checking looger loglevel and message. timestamp and thread are ignored, as they can change
-                if (!jsonObject.get("logger").getAsString().equals(loggerName)) {
-                    found = false;
-                }
-
-                if (!jsonObject.get("loglevel").getAsString().equals(logLevel.levelStr)) {
-                    found = false;
-                }
-
-                if (!jsonObject.get("message").getAsString().equals(message)) {
-                    found = false;
-                }
-
-                if (checkHostname) {
-                    try {
-                        String hostname = InetAddress.getLocalHost().getHostName();
-
-                        if (!jsonObject.get("hostname").getAsString().equals(hostname)) {
-                            found = false;
-                        }
-
-                    } catch (UnknownHostException e) {
-                        logger.error("Could not get hostname, considered as failure!", e);
-                        found = false;
-                    }
-                }
-                else {
-
-                    // Fail if we have hostname but not checking it
-                    if (jsonObject.get("hostname") != null) {
-                        if (!jsonObject.get("hostname").getAsString().isEmpty()) {
-
-                            found = false;
-                        }
-                    }
-                    else {
-                        logger.debug("Did not find hostname, that's ok.");
-                    }
-                }
-
-                if (additionalFields != null) {
-
-                    // Not foreach because I need to change "found" variable and it is not effectively final
-                    for (Map.Entry<String,String> entry : additionalFields.entrySet()) {
-
-                        String key = entry.getKey();
-                        String value = entry.getValue();
-
-                        try {
-                            if (!jsonObject.get(key).getAsString().equals(value)) {
-                                found = false;
-                            }
-                        } catch (NullPointerException e) {
-                            logger.error("Could not find key {} in log!", key);
-                            found = false;
-                        }
-                    }
-                }
-
-                if (exception != null) {
-                    found = jsonObject.get("exception").toString().replace("\\", "").contains(exception.getMessage());
-                }
-
-                if (mdcProperties != null) {
-
-                    for (Map.Entry<String,String> entry: mdcProperties.entrySet()) {
-
-                        if (!jsonObject.get(entry.getKey()).toString().contains(entry.getValue())) {
-                            found = false;
-                        }
-                    }
-                }
-
-                if (exactException != null) {
-                    found = jsonObject.get("exception").getAsString().equals(exactException);
-                }
+            Map<String, String> paramToValueMap = Splitter.on('&').withKeyValueSeparator('=').split(queryString);
+            if (paramToValueMap.containsKey("token")) {
+                token = paramToValueMap.get("token");
+            } else {
+                throw new IllegalArgumentException("Token not found in query string: "+queryString);
             }
 
-            if (found) {
-                // No need to check any further, we have found the message
-                return true;
+            if (paramToValueMap.containsKey("type")) {
+                type = paramToValueMap.get("type");
+            } else {
+                throw new IllegalArgumentException("Token not found in query string: "+queryString);
+            }
+
+            try {
+                jsonObject = new JsonParser().parse(logLine).getAsJsonObject();
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Not a valid json received in body of request. logLine = "
+                    + logLine, e);
             }
         }
 
-        return false;
+        public String getToken() {
+            return token;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public JsonObject getJsonObject() {
+            return jsonObject;
+        }
+
+        public String getMessage() {
+            return getStringFieldOrNull("message");
+        }
+
+        public String getLogger() {
+            return getStringFieldOrNull("logger");
+        }
+
+        public String getLogLevel() {
+            return getStringFieldOrNull("loglevel");
+        }
+
+        public String getHost() {
+            return getStringFieldOrNull("hostname");
+        }
+
+        public String getStringFieldOrNull(String fieldName) {
+            if (jsonObject.get(fieldName) == null) return null;
+            return jsonObject.get(fieldName).getAsString();
+        }
+
+        @Override
+        public String toString() {
+            return "[Token = "+token +", type = "+type+"]: " + jsonObject.toString();
+        }
+    }
+
+    public Optional<LogRequest> getLogByMessageField(String msg) {
+        return logRequests.stream()
+                .filter(r -> r.getMessage() != null && r.getMessage().equals(msg))
+                .findFirst();
+    }
+
+    public int getNumberOfReceivedLogs() {
+        return logRequests.size();
     }
 }
