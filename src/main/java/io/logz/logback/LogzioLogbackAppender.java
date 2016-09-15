@@ -1,11 +1,11 @@
 package io.logz.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.AppenderBase;
+import ch.qos.logback.core.UnsynchronizedAppenderBase;
 
 import java.io.File;
 
-public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
+public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     private LogzioSender logzioSender;
 
@@ -21,6 +21,7 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
     private boolean debug = false;
     private boolean addHostname = false;
     private String additionalFields;
+    private int gcPersistedQueueFilesIntervalSeconds = 30;
 
     public void setToken(String logzioToken) {
         this.logzioToken = logzioToken;
@@ -118,6 +119,13 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
         this.addHostname = addHostname;
     }
 
+    public void setGcPersistedQueueFilesIntervalSeconds(int gcPersistedQueueFilesIntervalSeconds) {
+        this.gcPersistedQueueFilesIntervalSeconds = gcPersistedQueueFilesIntervalSeconds;
+    }
+
+    public int getGcPersistedQueueFilesIntervalSeconds() {
+        return gcPersistedQueueFilesIntervalSeconds;
+    }
 
     @Override
     public void start() {
@@ -126,7 +134,7 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
             return;
         }
 
-        if (!(fileSystemFullPercentThreshold > 1 && fileSystemFullPercentThreshold <= 100)) {
+        if (!(fileSystemFullPercentThreshold >= 1 && fileSystemFullPercentThreshold <= 100)) {
             if (fileSystemFullPercentThreshold != -1) {
                 addError("fileSystemFullPercentThreshold should be a number between 1 and 100, or -1");
                 return;
@@ -135,9 +143,16 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
 
         if (bufferDir != null) {
             File bufferFile = new File(bufferDir);
-            if (!bufferFile.mkdirs()) {
-                addError("We cant write to your bufferDir location");
-                return;
+            if (bufferFile.exists()) {
+                if (!bufferFile.canWrite()) {
+                    addError("We cant write to your bufferDir location: "+bufferFile.getAbsolutePath());
+                    return;
+                }
+            } else {
+                if (!bufferFile.mkdirs()) {
+                    addError("We cant create your bufferDir location: "+bufferFile.getAbsolutePath());
+                    return;
+                }
             }
         }
         else {
@@ -148,13 +163,13 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
             StatusReporter reporter = new StatusReporter();
             logzioSender = new LogzioSender(logzioToken, logzioType, drainTimeoutSec, fileSystemFullPercentThreshold,
                                             bufferDir, logzioUrl, socketTimeout, connectTimeout, debug,
-                                            reporter, context.getScheduledExecutorService(), addHostname, additionalFields);
+                                            reporter, context.getScheduledExecutorService(), addHostname,
+                                            additionalFields, gcPersistedQueueFilesIntervalSeconds);
             logzioSender.start();
         }
         catch (IllegalArgumentException e) {
             addError("Something unexpected happened while generating connection to logz.io");
-            addError("Exception: " + e.getMessage());
-            e.printStackTrace();
+            addError("Exception: " + e.getMessage(), e);
             return;  // Not signaling super as up, we have something we cant deal with.
         }
 
@@ -163,7 +178,7 @@ public class LogzioLogbackAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     public void stop() {
-        logzioSender.stop();
+        if (logzioSender != null) logzioSender.stop();
         super.stop();
     }
 

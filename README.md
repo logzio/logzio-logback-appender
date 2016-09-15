@@ -12,7 +12,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
 </dependency>
 ```
 
@@ -91,9 +91,13 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.6
+   - Fix: Appender can get into dead-lock thus causing all threads logging to bloc
+   - Refactored all Unit tests 
+   - Switched to maven wrapper for build consistency
  - 1.0.5
    - Add MDC support
-   - Replace exception handling to use logbacks own instead of implementing alone
+   - Replace exception handling to use Logback own instead of implementing alone
    - Periodically calls BigQueue GC function so we can release files on local disk
  - 1.0.4
    - If you logged a throwable as well, we will put it inside a field named "exception"

@@ -2,8 +2,6 @@ package io.logz.logback;
 
 import ch.qos.logback.classic.pattern.ThrowableProxyConverter;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.IThrowableProxy;
-import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import com.bluejeans.common.bigqueue.BigQueue;
 import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
@@ -26,13 +24,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LogzioSender {
-
-
-    private final int MAX_SIZE_IN_BYTES = 3 * 1024 * 1024;  // 3 MB
-    private final int INITIAL_WAIT_BEFORE_RETRY_MS = 2000;
-    private final int MAX_RETRIES_ATTEMPTS = 3;
+    private static final int MAX_SIZE_IN_BYTES = 3 * 1024 * 1024;  // 3 MB
+    public static final int INITIAL_WAIT_BEFORE_RETRY_MS = 2000;
+    public static final int MAX_RETRIES_ATTEMPTS = 3;
 
     private final BigQueue logsBuffer;
     private final File queueDirectory;
@@ -54,10 +51,14 @@ public class LogzioSender {
 
     private final List<String> throwableProxyConversionOptions = Arrays.asList("full");
     private final ThrowableProxyConverter throwableProxyConverter;
+    private final int gcPersistedQueueFilesIntervalSeconds;
+    private final AtomicBoolean drainRunning = new AtomicBoolean(false);
 
     public LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
                         String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
-                        LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor, boolean addHostname, String additionalFields) throws IllegalArgumentException {
+                        LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor,
+                        boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds)
+            throws IllegalArgumentException {
 
         this.logzioToken = logzioToken;
         this.logzioType = logzioType;
@@ -68,6 +69,7 @@ public class LogzioSender {
         this.connectTimeout = connectTimeout;
         this.debug = debug;
         this.reporter = reporter;
+        this.gcPersistedQueueFilesIntervalSeconds = gcPersistedQueueFilesIntervalSeconds;
         additionalFieldsMap = new HashMap<>();
 
         if (this.fsPercentThreshold == -1) {
@@ -125,21 +127,19 @@ public class LogzioSender {
 
     public void start() {
         tasksExecutor.scheduleWithFixedDelay(this::drainQueueAndSend, 0, drainTimeout, TimeUnit.SECONDS);
-        tasksExecutor.scheduleWithFixedDelay(this::gcBigQueue, 0, 30, TimeUnit.SECONDS);
+        tasksExecutor.scheduleWithFixedDelay(this::gcBigQueue, 0, gcPersistedQueueFilesIntervalSeconds, TimeUnit.SECONDS);
     }
 
     public void stop() {
         try {
+            debug("Submitting a final drain queue task to drain before shutdown");
+            tasksExecutor.schedule(this::drainQueue, 0, TimeUnit.SECONDS);
             debug("Got stop request, stopping new executions");
             tasksExecutor.shutdown();
             debug("Waiting up to 20 seconds for tasks to finish");
             tasksExecutor.awaitTermination(20, TimeUnit.SECONDS);
             debug("Shutting all tasks forcefully");
             tasksExecutor.shutdownNow();
-
-            // Just want to make sure nothing left behind
-            drainQueue();
-
         } catch (InterruptedException e) {
 
             // Reset the interrupt flag
@@ -150,7 +150,7 @@ public class LogzioSender {
     public void gcBigQueue() {
         try {
             logsBuffer.gc();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // We cant throw anything out, or the task will stop, so just swallow all
             reporter.error("Uncaught error from BigQueue.gc()", e);
         }
@@ -158,11 +158,20 @@ public class LogzioSender {
 
     public void drainQueueAndSend() {
         try {
+            if (drainRunning.get()) {
+                debug("Drain is running so we won't run another one in parallel");
+                return;
+            } else {
+                drainRunning.set(true);
+            }
+
             drainQueue();
 
         } catch (Exception e) {
             // We cant throw anything out, or the task will stop, so just swallow all
             reporter.error("Uncaught error from Logz.io sender", e);
+        } finally {
+            drainRunning.set(false);
         }
     }
 
@@ -228,6 +237,10 @@ public class LogzioSender {
                     logsList.forEach((logMessage) -> enqueue(logMessage.getMessage()));
 
                     // Lets wait for a new interval, something is wrong in the server side
+                    break;
+                }
+                if (Thread.interrupted()) {
+                    debug("Stopping drainQueue to thread being interrupted");
                     break;
                 }
             }

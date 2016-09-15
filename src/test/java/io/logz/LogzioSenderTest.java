@@ -2,52 +2,24 @@ package io.logz;
 
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.core.Context;
-import io.logz.logback.LogzioLogbackAppender;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import io.logz.MockLogzioBulkListener.LogRequest;
+import io.logz.logback.LogzioSender;
 import org.junit.Test;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
-public class LogzioSenderTest {
-
-    private final static Logger logger = LoggerFactory.getLogger(LogzioSenderTest.class);
-    public static final String LISTENER_ADDRESS = "localhost";
-    public static final int LISTENER_PORT = 8070;
-
-    private final static MockLogzioBulkListener mockListener = new MockLogzioBulkListener(LISTENER_ADDRESS, 8070);
-
-    @BeforeClass
-    public static void startMockListener() throws Exception {
-
-        logger.info("Starting Mock listener");
-        mockListener.start();
-    }
-
-    @AfterClass
-    public static void stopMockListener() {
-
-        logger.info("Stopping Mock listener");
-        mockListener.stop();
-    }
-
-    @Before
-    public void cleanLogs() {
-
-        logger.info("Clearing all requests from mock listener");
-        mockListener.cleanRequests();
-    }
+public class LogzioSenderTest extends BaseTest {
 
     @Test
     public void simpleAppending() throws Exception {
@@ -57,23 +29,19 @@ public class LogzioSenderTest {
         String loggerName = "simpleAppending";
         int drainTimeout = 1;
 
-        String message1 = "Testing..";
-        String message2 = "Warning test..";
+        String message1 = "Testing.." + random(5);
+        String message2 = "Warning test.." + random(5);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, null);
 
         testLogger.info(message1);
         testLogger.warn(message2);
 
-        // Sleep double time the drain timeout
-        Thread.sleep(drainTimeout * 1000 * 2);
+        sleepSeconds(drainTimeout * 2);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
-
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message2, false, null, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message1, false, null, null, null, null));
-
+        assertNumberOfReceivedMsgs(2);
+        assertLogReceivedIs(message1, token, type, loggerName, Level.INFO);
+        assertLogReceivedIs(message2, token, type, loggerName, Level.WARN);
     }
 
     @Test
@@ -82,25 +50,26 @@ public class LogzioSenderTest {
         String token = "tokenWohooToken";
         String type = "typoosh";
         String loggerName = "multipleBufferDrains";
-        int drainTimeout = 2;
+        int drainTimeoutSec = 2;
 
-        String message1 = "Testing first drain";
-        String message2 = "And the second drain";
+        String message1 = "Testing first drain - " + random(5);
+        String message2 = "And the second drain" + random(5);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeoutSec, null, null, null, false, null);
 
         testLogger.info(message1);
 
-        // Sleep double time the drain timeout
-        Thread.sleep(drainTimeout * 1000 * 2);
+        sleepSeconds(2 * drainTimeoutSec);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
+        assertNumberOfReceivedMsgs(1);
+        assertLogReceivedIs(message1, token, type, loggerName, Level.INFO);
 
         testLogger.warn(message2);
 
-        Thread.sleep(drainTimeout * 1000 * 2);
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
+        sleepSeconds(2 * drainTimeoutSec);
+
+        assertNumberOfReceivedMsgs(2);
+        assertLogReceivedIs(message2, token, type, loggerName, Level.WARN);
     }
 
     @Test
@@ -110,199 +79,195 @@ public class LogzioSenderTest {
         String loggerName = "longDrainTimeout";
         int drainTimeout = 10;
 
-        String message1 = "Sending one log";
-        String message2 = "And one more important one";
+        String message1 = "Sending one log - " + random(5);
+        String message2 = "And one more important one - " + random(5);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, null);
 
         testLogger.info(message1);
         testLogger.error(message2);
 
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null, null));
+        assertNumberOfReceivedMsgs(0);
 
-        // Sleep the drain timeout + 1 second
-        Thread.sleep(drainTimeout * 1000 + 1000);
+        sleepSeconds(drainTimeout + 1);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null, null));
+        assertNumberOfReceivedMsgs(2);
+        assertLogReceivedIs(message1, token, type, loggerName, Level.INFO);
+        assertLogReceivedIs(message2, token, type, loggerName, Level.ERROR);
     }
 
     @Test
-    public void changeBufferLocation() {
-
+    public void testLoggerCreatesDirectoryWhichDoesNotExists() {
         String token = "nowWeWantToChangeTheBufferLocation";
         String type = "justTestingExistence";
         String loggerName = "changeBufferLocation";
         int drainTimeout = 10;
-        String bufferDir = "./MyAwesomeBuffer";
+        File tempDirectory = TestEnvironment.createTempDirectory();
+        String bufferDir = new File(tempDirectory, "dirWhichDoesNotExists").getAbsolutePath();
 
-        String message1 = "Just sending something";
+        String message1 = "Just sending something - " + random(5);
 
         File buffer = new File(bufferDir);
 
-        try {
-            assertFalse(buffer.exists());
+        assertFalse(buffer.exists());
 
-            Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, bufferDir, null, false, null);
-            testLogger.info(message1);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, bufferDir, null, false, null);
+        testLogger.info(message1);
 
-            assertTrue(buffer.exists());
-        }
-        finally {
-
-            try {
-                recursiveDeleteDir(buffer);
-            }
-            catch (Exception e ) {
-                logger.error("Could not delete buffer dir.. {}", e);
-            }
-        }
+        assertTrue(buffer.exists());
     }
 
     @Test
     public void fsPercentDrop() throws Exception {
-
         String token = "droppingLogsDueToFSOveruse";
         String type = "droppedType";
         String loggerName = "fsPercentDrop";
-        int drainTimeout = 1;
+        int drainTimeoutSec = 1;
         int fsPercentDrop = 1; // Should drop all logs
 
-        String message1 = "First log that will be dropped";
-        String message2 = "And a second drop";
+        String message1 = "First log that will be dropped - " +  random(5);
+        String message2 = "And a second drop - " + random(5);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, fsPercentDrop, null, null, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeoutSec, fsPercentDrop, null, null, false, null);
 
         testLogger.info(message1);
         testLogger.warn(message2);
 
-        // Sleep double time the drain timeout
-        Thread.sleep(drainTimeout * 1000 * 2);
+        sleepSeconds(2 * drainTimeoutSec);
 
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
+        assertNumberOfReceivedMsgs(0);
     }
 
     @Test
     public void serverCrash() throws Exception {
-
         String token = "nowWeWillCrashTheServerAndRecover";
         String type = "crashingType";
         String loggerName = "serverCrash";
         int drainTimeout = 1;
 
-        String message1 = "Log before drop";
-        String message2 = "Log during drop";
-        String message3 = "Log after drop";
+        String message1 = "Log before drop - " + random(5);
+        String message2 = "Log during drop - " + random(5);
+        String message3 = "Log after drop - " + random(5);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, 1000, false, null);
 
         testLogger.info(message1);
 
-        // Sleep double time the drain timeout
-        Thread.sleep(drainTimeout * 1000 * 2);
+        sleepSeconds(2 * drainTimeout);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message3, false, null, null, null, null));
+        assertNumberOfReceivedMsgs(1);
+        assertLogReceivedIs(message1, token, type, loggerName, Level.INFO);
 
         mockListener.stop();
 
         testLogger.error(message2);
-        Thread.sleep(drainTimeout * 1000 * 2);
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null, null));
+        sleepSeconds(2 * drainTimeout);
+
+        assertNumberOfReceivedMsgs(1); // haven't changed - still 1
 
         mockListener.start();
 
         testLogger.warn(message3);
 
-        Thread.sleep(drainTimeout * 1000 * 2);
+        sleepSeconds(2 * drainTimeout);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.ERROR, message2, false, null, null, null, null));
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message3, false, null, null, null, null));
+        assertNumberOfReceivedMsgs(3);
+        assertLogReceivedIs(message2, token, type, loggerName, Level.ERROR);
+        assertLogReceivedIs(message3, token, type, loggerName, Level.WARN);
     }
 
     @Test
     public void getTimeoutFromServer() throws Exception {
-
         String token = "gettingTimeoutFromServer";
         String type = "timeoutType";
         String loggerName = "getTimeoutFromServer";
         int drainTimeout = 1;
-        int serverTimeout = 1000;
+        int serverTimeout = 2000;
 
-        String message1 = "Log that will be sent";
-        String message2 = "Log that would timeout and then being re-sent";
+        String message1 = "Log that will be sent - " +  random(5);
+        String message2 = "Log that would timeout and then being re-sent - " + random(5);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, serverTimeout/2, false, null);
+        int socketTimeout = serverTimeout / 2;
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, socketTimeout, false, null);
 
         testLogger.info(message1);
 
-        // Sleep double time the drain timeout
-        Thread.sleep(drainTimeout * 1000 * 2);
+        sleepSeconds(2 * drainTimeout);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
+        assertNumberOfReceivedMsgs(1);
+        assertLogReceivedIs(message1, token, type, loggerName, Level.INFO);
 
         mockListener.setTimeoutMillis(serverTimeout);
         mockListener.setMakeServerTimeout(true);
 
         testLogger.warn(message2);
 
-        Thread.sleep((2000 + serverTimeout) * 2 * 3); // Make sure we are no longer keep retrying
+        sleepSeconds((socketTimeout / 1000) * LogzioSender.MAX_RETRIES_ATTEMPTS + retryTotalDelay());
 
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
+        assertNumberOfReceivedMsgs(1); // Stays the same
 
         mockListener.setMakeServerTimeout(false);
 
-        Thread.sleep(drainTimeout * 1000 * 2);
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
+        sleepSeconds(2 * drainTimeout);
+
+        assertNumberOfReceivedMsgs(2);
+
+        assertLogReceivedIs(message2, token, type, loggerName, Level.WARN);
+    }
+
+    private int retryTotalDelay() {
+        int sleepBetweenRetry = LogzioSender.INITIAL_WAIT_BEFORE_RETRY_MS / 1000;
+        int totalSleepTime = 0;
+        for (int i = 1; i < LogzioSender.MAX_RETRIES_ATTEMPTS; i++) {
+            totalSleepTime += sleepBetweenRetry;
+            sleepBetweenRetry *= 2;
+        }
+        return totalSleepTime;
     }
 
     @Test
     public void getExceptionFromServer() throws Exception {
-
         String token = "gettingExceptionFromServer";
         String type = "exceptionType";
         String loggerName = "getExceptionFromServer";
         int drainTimeout = 1;
 
-        String message1 = "Log that will be sent";
-        String message2 = "Log that would get exception and be sent again";
+        String message1 = "Log that will be sent - " +  random(5);
+        String message2 = "Log that would get exception and be sent again - " + random(5);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, null);
 
         testLogger.info(message1);
 
-        // Sleep double time the drain timeout
-        Thread.sleep(drainTimeout * 1000 * 2);
+        sleepSeconds(2 * drainTimeout);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
+        assertNumberOfReceivedMsgs(1);
+        assertLogReceivedIs(message1, token, type, loggerName, Level.INFO);
 
-        mockListener.setRaiseExceptionOnLog(true);
+        mockListener.setFailWithServerError(true);
 
         testLogger.warn(message2);
 
+        sleepSeconds(2 * drainTimeout);
+
+        assertNumberOfReceivedMsgs(1); // Haven't changed
+
+        mockListener.setFailWithServerError(false);
+
         Thread.sleep(drainTimeout * 1000 * 2);
 
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
-
-        mockListener.setRaiseExceptionOnLog(false);
-
-        Thread.sleep(drainTimeout * 1000 * 2);
-
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.WARN, message2, false, null, null, null, null));
+        assertNumberOfReceivedMsgs(2);
+        assertLogReceivedIs(message2, token, type, loggerName, Level.WARN);
     }
 
     @Test
     public void validateAdditionalFields() throws Exception {
-
         String token = "validatingAdditionalFields";
         String type = "willTryWithOrWithoutEnvironmentVariables";
         String loggerName = "additionalLogger";
         int drainTimeout = 1;
 
-        String message1 = "Just a log";
+        String message1 = "Just a log - " + random(5);
         Map<String,String > additionalFields = new HashMap<>();
 
         String additionalFieldsString = "java_home=$JAVA_HOME;testing=yes;message=override";
@@ -313,48 +278,41 @@ public class LogzioSenderTest {
 
         testLogger.info(message1);
 
-        // Sleep double time the drain timeout
-        Thread.sleep(drainTimeout * 1000 * 2);
+        sleepSeconds(2 * drainTimeout);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null, null));
-
-        // Checking that the message is not getting override
-        additionalFields.put("message", "override");
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null, null));
-
-        additionalFields.put("message", message1);
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null, null));
-
-        additionalFields.clear();
-        additionalFields.put("change", "all");
-
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, additionalFields, null, null, null));
+        assertNumberOfReceivedMsgs(1);
+        LogRequest logRequest = assertLogReceivedByMessage(message1);
+        assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO);
+        assertAdditionalFields(logRequest, additionalFields);
     }
 
     @Test
     public void existingHostname() throws Exception {
-
         String token = "checkingHostname";
         String type = "withOrWithoutHostnamr";
         String loggerName = "runningOutOfIdeasHere";
         int drainTimeout = 1;
 
-        String message1 = "Hostname log";
+        String message1 = "Hostname log - " +  random(5);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, true, null);
 
         testLogger.info(message1);
 
         // Sleep double time the drain timeout
-        Thread.sleep(drainTimeout * 1000 * 2);
+        sleepSeconds(2 * drainTimeout);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, true, null, null, null, null));
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, null, null));
+        assertNumberOfReceivedMsgs(1);
+        LogRequest logRequest = assertLogReceivedByMessage(message1);
+        assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO);
+
+        String hostname = InetAddress.getLocalHost().getHostName();
+        assertThat(logRequest.getHost()).isEqualTo(hostname);
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Test
     public void sendException() throws Exception {
-
         String token = "checkingExceptions";
         String type = "badType";
         String loggerName = "exceptionProducer";
@@ -368,32 +326,38 @@ public class LogzioSenderTest {
         try {
             Integer.parseInt(message1);
         } catch (Exception e) {
-
             exception = e;
             testLogger.info(message1, e);
         }
+        assertThat(exception).isNotNull();
 
-        // Sleep double time the drain timeout
-        Thread.sleep(drainTimeout * 1000 * 2);
+        sleepSeconds(2 * drainTimeout);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, exception, null, null));
+        assertNumberOfReceivedMsgs(1);
+        LogRequest logRequest = assertLogReceivedByMessage(message1);
+        assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO);
+
+        String exceptionField = logRequest.getStringFieldOrNull("exception");
+        if (exceptionField == null) fail("Exception field does not exists");
+
+        assertThat(exceptionField.replace("\\", "")).contains(exception.getMessage());
     }
 
     @Test
     public void testMDC() throws Exception {
-
         String token = "mdcTokensAreTheBest";
         String type = "mdcType";
         String loggerName = "mdcTesting";
         int drainTimeout = 1;
 
-        String message1 = "Simple log line";
+        String message1 = "Simple log line - "+random(5);
 
         String mdcKey = "mdc-key";
         String mdcValue = "mdc-value";
 
         Map<String, String> mdcKv = new HashMap<>();
         mdcKv.put(mdcKey, mdcValue);
+        mdcKv.put("logger", "Doesn't matter");
 
         MDC.put(mdcKey, mdcValue);
 
@@ -401,69 +365,12 @@ public class LogzioSenderTest {
 
         testLogger.info(message1);
 
-        // Sleep double time the drain timeout
-        Thread.sleep(drainTimeout * 1000 * 2);
+        sleepSeconds(2 * drainTimeout);
 
-        assertTrue(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, mdcKv, null));
+        assertNumberOfReceivedMsgs(1);
+        LogRequest logRequest = assertLogReceivedByMessage(message1);
+        assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO);
 
-        mdcKv.put("logger", "Doesn't matter");
-
-        // This should fail because we dont allow collision with our base fields
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, mdcKv, null));
-
-        mdcKv.clear();
-
-        // Override different value
-        mdcKv.put(mdcKey, mdcKey);
-        assertFalse(mockListener.checkForLogExistence(token, type, loggerName, Level.INFO, message1, false, null, null, mdcKv, null));
-    }
-
-    public static Logger createLogger(String token, String type, String loggerName, Integer drainTimeout, Integer fsPercentThreshold, String bufferDir, Integer socketTimeout, boolean addHostname, String additionalFields) {
-
-        logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, fsPercentThreshold={}, bufferDir={}, socketTimeout={}, addHostname={}, additionalFields={}",
-                loggerName, token, type, drainTimeout, fsPercentThreshold, bufferDir, socketTimeout, addHostname, additionalFields);
-
-        ch.qos.logback.classic.Logger logbackLogger =  (ch.qos.logback.classic.Logger)LoggerFactory.getLogger(loggerName);
-
-        Context logbackContext = logbackLogger.getLoggerContext();
-        LogzioLogbackAppender logzioLogbackAppender = new LogzioLogbackAppender();
-        logzioLogbackAppender.setContext(logbackContext);
-        logzioLogbackAppender.setToken(token);
-        logzioLogbackAppender.setLogzioType(type);
-        logzioLogbackAppender.setLogzioUrl("http://" + LISTENER_ADDRESS + ":" + LISTENER_PORT);
-        logzioLogbackAppender.setAddHostname(addHostname);
-
-        if (drainTimeout != null) {
-            logzioLogbackAppender.setDrainTimeoutSec(drainTimeout);
-        }
-        if (fsPercentThreshold != null) {
-            logzioLogbackAppender.setFileSystemFullPercentThreshold(fsPercentThreshold);
-        }
-        if (bufferDir != null) {
-            logzioLogbackAppender.setBufferDir(bufferDir);
-        }
-        if (socketTimeout != null) {
-            logzioLogbackAppender.setSocketTimeout(socketTimeout);
-        }
-        if (additionalFields != null) {
-            logzioLogbackAppender.setAdditionalFields(additionalFields);
-        }
-
-        logzioLogbackAppender.start();
-
-        logbackLogger.addAppender(logzioLogbackAppender);
-        logbackLogger.setAdditive(true);
-
-        return logbackLogger;
-    }
-
-    private void recursiveDeleteDir(File file) {
-        File[] files = file.listFiles();
-        if (files != null) {
-            for (File currFile : files) {
-                recursiveDeleteDir(currFile);
-            }
-        }
-        file.delete();
+        assertThat(logRequest.getStringFieldOrNull(mdcKey)).isEqualTo(mdcValue);
     }
 }
