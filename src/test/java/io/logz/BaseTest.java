@@ -31,7 +31,9 @@ public abstract class BaseTest {
         while (attempts <= 3) {
             int availablePort = -1;
             try {
-                availablePort = new ServerSocket(0).getLocalPort();;
+                ServerSocket serverSocket = new ServerSocket(0);
+                serverSocket.close();
+                availablePort = serverSocket.getLocalPort();;
                 mockListener = new MockLogzioBulkListener(LISTENER_ADDRESS, availablePort);
                 logger.info("Starting Mock listener on port {}", availablePort);
                 mockListener.start();
