@@ -2,7 +2,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.logz.logback/logzio-logback-appender/badge.svg)](http://mvnrepository.com/artifact/io.logz.logback/logzio-logback-appender)
 
 # Logzio logback appender
-This appender sends logs to your [Logz.io](http://logz.io) account, using non-blocking threading, bulks, and HTTPS encryption. Please note that this appendr requires logback version 1.1.7 and up.
+This appender sends logs to your [Logz.io](http://logz.io) account, using non-blocking threading, bulks, and HTTPS encryption. Please note that this appendr requires logback version 1.1.7 and up, and java 8 and up.
 
 ### Technical Information
 This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implementation of persistent queue, so all logs are backed up to a local file system before being sent. Once you send a log, it will be enqueued in the buffer and 100% non-blocking. There is a background task that will handle the log shipment for you. This jar is an "Uber-Jar" that shades both BigQueue, Gson and Guava to avoid "dependency hell".
