@@ -31,6 +31,8 @@ public class LogzioSender {
     public static final int INITIAL_WAIT_BEFORE_RETRY_MS = 2000;
     public static final int MAX_RETRIES_ATTEMPTS = 3;
 
+    private static final Map<String, LogzioSender> logzioSenderInstances = new HashMap<>();
+
     private final BigQueue logsBuffer;
     private final File queueDirectory;
     private final URL logzioListenerUrl;
@@ -54,7 +56,7 @@ public class LogzioSender {
     private final int gcPersistedQueueFilesIntervalSeconds;
     private final AtomicBoolean drainRunning = new AtomicBoolean(false);
 
-    public LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
+    private LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
                         String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
                         LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor,
                         boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds)
@@ -123,6 +125,26 @@ public class LogzioSender {
         throwableProxyConverter.start();
 
         debug("Created new LogzioSender class");
+    }
+
+    public static LogzioSender getOrCreateSenderByType(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
+                                                       String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
+                                                       LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor,
+                                                       boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds) {
+
+        LogzioSender logzioSenderInstance = logzioSenderInstances.get(logzioType);
+
+        if (logzioSenderInstance == null) {
+
+            LogzioSender logzioSender = new LogzioSender(logzioToken, logzioType, drainTimeout, fsPercentThreshold,
+                    bufferDir, logzioUrl, socketTimeout, connectTimeout, debug, reporter,
+                    tasksExecutor, addHostname, additionalFields, gcPersistedQueueFilesIntervalSeconds);
+
+            logzioSenderInstances.put(logzioType, logzioSender);
+            return logzioSender;
+        } else {
+            return logzioSenderInstance;
+        }
     }
 
     public void start() {

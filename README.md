@@ -12,7 +12,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
 </dependency>
 ```
 
@@ -91,6 +91,9 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.7
+   - Create different buffers for different types
+   - Moved LogzioSender class to be a factory, by log type - meaning no different configurations for the same type (which does not make sense anyway)
  - 1.0.6
    - Fix: Appender can get into dead-lock thus causing all threads logging to bloc
    - Refactored all Unit tests 

@@ -156,12 +156,12 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             }
         }
         else {
-            bufferDir = System.getProperty("java.io.tmpdir") + "/logzio-logback-buffer";
+            bufferDir = System.getProperty("java.io.tmpdir") + "/logzio-logback-buffer/" + logzioType;
         }
 
         try {
             StatusReporter reporter = new StatusReporter();
-            logzioSender = new LogzioSender(logzioToken, logzioType, drainTimeoutSec, fileSystemFullPercentThreshold,
+            logzioSender = LogzioSender.getOrCreateSenderByType(logzioToken, logzioType, drainTimeoutSec, fileSystemFullPercentThreshold,
                                             bufferDir, logzioUrl, socketTimeout, connectTimeout, debug,
                                             reporter, context.getScheduledExecutorService(), addHostname,
                                             additionalFields, gcPersistedQueueFilesIntervalSeconds);
