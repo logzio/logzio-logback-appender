@@ -127,11 +127,15 @@ public class LogzioSender {
         debug("Created new LogzioSender class");
     }
 
-    public static LogzioSender getOrCreateSenderByType(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
+    public static synchronized LogzioSender getOrCreateSenderByType(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
                                                        String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
                                                        LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor,
                                                        boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds) {
 
+        // We want one buffer per appender. And the only thing that should be different between appenders, is a type.
+        // so that's why I create separate buffers per type.
+        // I don't want to force users to configure anything else, but to use the already configured appender.
+        // BUT - users not always understand the notion of types at first, and can define multiple appenders on the same type - and this is what I want to protect by this factory.
         LogzioSender logzioSenderInstance = logzioSenderInstances.get(logzioType);
 
         if (logzioSenderInstance == null) {
@@ -143,6 +147,7 @@ public class LogzioSender {
             logzioSenderInstances.put(logzioType, logzioSender);
             return logzioSender;
         } else {
+            reporter.warning("Already found appender configured for type " + logzioType + ", re-using the same one.");
             return logzioSenderInstance;
         }
     }
