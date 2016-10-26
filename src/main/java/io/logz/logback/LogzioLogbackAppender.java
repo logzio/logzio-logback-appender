@@ -142,6 +142,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         }
 
         if (bufferDir != null) {
+
+            bufferDir += "/" + logzioType;
             File bufferFile = new File(bufferDir);
             if (bufferFile.exists()) {
                 if (!bufferFile.canWrite()) {
