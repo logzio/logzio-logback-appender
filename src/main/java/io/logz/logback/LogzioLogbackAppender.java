@@ -142,6 +142,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         }
 
         if (bufferDir != null) {
+
+            bufferDir += "/" + logzioType;
             File bufferFile = new File(bufferDir);
             if (bufferFile.exists()) {
                 if (!bufferFile.canWrite()) {
@@ -156,12 +158,12 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             }
         }
         else {
-            bufferDir = System.getProperty("java.io.tmpdir") + "/logzio-logback-buffer";
+            bufferDir = System.getProperty("java.io.tmpdir") + "/logzio-logback-buffer/" + logzioType;
         }
 
         try {
             StatusReporter reporter = new StatusReporter();
-            logzioSender = new LogzioSender(logzioToken, logzioType, drainTimeoutSec, fileSystemFullPercentThreshold,
+            logzioSender = LogzioSender.getOrCreateSenderByType(logzioToken, logzioType, drainTimeoutSec, fileSystemFullPercentThreshold,
                                             bufferDir, logzioUrl, socketTimeout, connectTimeout, debug,
                                             reporter, context.getScheduledExecutorService(), addHostname,
                                             additionalFields, gcPersistedQueueFilesIntervalSeconds);
