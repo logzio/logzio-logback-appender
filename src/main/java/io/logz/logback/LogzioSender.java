@@ -221,11 +221,11 @@ public class LogzioSender {
             return true;
         }
 
-        int actualFsPercent = (int) (((double) queueDirectory.getUsableSpace() / queueDirectory.getTotalSpace()) * 100);
-        if (actualFsPercent >= fsPercentThreshold) {
+        int actualUsedFsPercent = 100 - ((int) (((double) queueDirectory.getUsableSpace() / queueDirectory.getTotalSpace()) * 100));
+        if (actualUsedFsPercent >= fsPercentThreshold) {
 
             reporter.warning(String.format("Logz.io: Dropping logs, as FS free usable space on %s is %d percent, and the drop threshold is %d percent",
-                    queueDirectory.getAbsolutePath(), actualFsPercent, fsPercentThreshold));
+                    queueDirectory.getAbsolutePath(), actualUsedFsPercent, fsPercentThreshold));
 
             return false;
         }
