@@ -224,7 +224,7 @@ public class LogzioSender {
         int actualUsedFsPercent = 100 - ((int) (((double) queueDirectory.getUsableSpace() / queueDirectory.getTotalSpace()) * 100));
         if (actualUsedFsPercent >= fsPercentThreshold) {
 
-            reporter.warning(String.format("Logz.io: Dropping logs, as FS free usable space on %s is %d percent, and the drop threshold is %d percent",
+            reporter.warning(String.format("Logz.io: Dropping logs, as FS used space on %s is %d percent, and the drop threshold is %d percent",
                     queueDirectory.getAbsolutePath(), actualUsedFsPercent, fsPercentThreshold));
 
             return false;

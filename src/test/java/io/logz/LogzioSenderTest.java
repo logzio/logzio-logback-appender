@@ -128,7 +128,7 @@ public class LogzioSenderTest extends BaseTest {
         tempDirectoryThatWillBeInTheSameFsAsTheBuffer.deleteOnExit();
 
         int fsPercentDrop = ((int) (((double) tempDirectoryThatWillBeInTheSameFsAsTheBuffer.getUsableSpace() /
-                tempDirectoryThatWillBeInTheSameFsAsTheBuffer.getTotalSpace()) * 100)) + 1;
+                tempDirectoryThatWillBeInTheSameFsAsTheBuffer.getTotalSpace()) * 100)) + 10;
 
         String message1 = "First log that will be dropped - " +  random(5);
         String message2 = "And a second drop - " + random(5);
