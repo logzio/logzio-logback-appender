@@ -12,7 +12,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
 </dependency>
 ```
 
@@ -91,6 +91,8 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.8
+   - Fixed filesystem percentage wrong calculation (#12)
  - 1.0.7
    - Create different buffers for different types
    - Moved LogzioSender class to be a factory, by log type - meaning no different configurations for the same type (which does not make sense anyway)
