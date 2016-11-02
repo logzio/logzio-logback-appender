@@ -12,7 +12,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.8</version>
+    <version>1.0.9</version>
 </dependency>
 ```
 
@@ -91,6 +91,8 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.9
+   - Fixed an issue preventing the appender to restart if asked. Also, prevented hot-loading of logback config.xml
  - 1.0.8
    - Fixed filesystem percentage wrong calculation (#12)
  - 1.0.7
