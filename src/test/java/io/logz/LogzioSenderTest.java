@@ -381,6 +381,7 @@ public class LogzioSenderTest extends BaseTest {
         assertThat(logRequest.getStringFieldOrNull(mdcKey)).isEqualTo(mdcValue);
     }
 
+    //context.reset() is called when logback loads a new logback.xml in-flight
     @Test
     public void testContextReset() throws Exception {
 

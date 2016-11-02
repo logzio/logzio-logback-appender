@@ -92,7 +92,7 @@ Will send a log to Logz.io that looks like this:
 
 ### Release notes
  - 1.0.9
-   - Fixed an issue preventing the appender to restart if asked
+   - Fixed an issue preventing the appender to restart if asked. Also, prevented hot-loading of logback config.xml
  - 1.0.8
    - Fixed filesystem percentage wrong calculation (#12)
  - 1.0.7

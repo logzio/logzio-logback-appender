@@ -22,8 +22,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LogzioSender {
@@ -32,6 +36,7 @@ public class LogzioSender {
     public static final int MAX_RETRIES_ATTEMPTS = 3;
 
     private static final Map<String, LogzioSender> logzioSenderInstances = new HashMap<>();
+    public static final int FINAL_DRAIN_TIMEOUT_SEC = 20;
 
     private final BigQueue logsBuffer;
     private final File queueDirectory;
@@ -158,8 +163,17 @@ public class LogzioSender {
     }
 
     public void stop() {
+        // Creating a scheduled executor, outside of logback to try and drain the queue one last time
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
         debug("Got stop request, Submitting a final drain queue task to drain before shutdown");
-        tasksExecutor.schedule(this::drainQueue, 0, TimeUnit.SECONDS);
+
+        try {
+            executorService.submit(this::drainQueue).get(FINAL_DRAIN_TIMEOUT_SEC, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            debug("Waited " + FINAL_DRAIN_TIMEOUT_SEC + " seconds, but could not finish draining. quitting.");
+        } finally {
+            executorService.shutdownNow();
+        }
     }
 
     public void gcBigQueue() {
