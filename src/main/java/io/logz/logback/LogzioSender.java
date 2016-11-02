@@ -158,20 +158,8 @@ public class LogzioSender {
     }
 
     public void stop() {
-        try {
-            debug("Submitting a final drain queue task to drain before shutdown");
-            tasksExecutor.schedule(this::drainQueue, 0, TimeUnit.SECONDS);
-            debug("Got stop request, stopping new executions");
-            tasksExecutor.shutdown();
-            debug("Waiting up to 20 seconds for tasks to finish");
-            tasksExecutor.awaitTermination(20, TimeUnit.SECONDS);
-            debug("Shutting all tasks forcefully");
-            tasksExecutor.shutdownNow();
-        } catch (InterruptedException e) {
-
-            // Reset the interrupt flag
-            Thread.currentThread().interrupt();
-        }
+        debug("Got stop request, Submitting a final drain queue task to drain before shutdown");
+        tasksExecutor.schedule(this::drainQueue, 0, TimeUnit.SECONDS);
     }
 
     public void gcBigQueue() {

@@ -2,10 +2,12 @@ package io.logz;
 
 
 import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import io.logz.MockLogzioBulkListener.LogRequest;
 import io.logz.logback.LogzioSender;
 import org.junit.Test;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.io.File;
@@ -377,5 +379,41 @@ public class LogzioSenderTest extends BaseTest {
         assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO);
 
         assertThat(logRequest.getStringFieldOrNull(mdcKey)).isEqualTo(mdcValue);
+    }
+
+    @Test
+    public void testContextReset() throws Exception {
+
+        String token = "testingContextReset";
+        String type = "contextResetType";
+        String loggerName = "ContextResetLogger";
+        int drainTimeout = 1;
+
+        String message1 = "Before Reset Line - "+random(5);
+        String message2 = "After Reset Line - "+random(5);
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, null);
+
+        testLogger.info(message1);
+        sleepSeconds(2 * drainTimeout);
+
+        assertNumberOfReceivedMsgs(1);
+        LogRequest logRequest = assertLogReceivedByMessage(message1);
+        assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO);
+
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+
+        // This clears everything from the context
+        loggerContext.reset();
+
+        // We need to add the appender again
+        testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, null);
+
+        testLogger.warn(message2);
+        sleepSeconds(2 * drainTimeout);
+
+        assertNumberOfReceivedMsgs(2);
+        logRequest = assertLogReceivedByMessage(message2);
+        assertLogReceivedIs(logRequest, token, type, loggerName, Level.WARN);
     }
 }
