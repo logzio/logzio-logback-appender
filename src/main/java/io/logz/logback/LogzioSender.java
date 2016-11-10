@@ -53,8 +53,8 @@ public class LogzioSender {
     private final int connectTimeout;
     private final boolean debug;
     private final LogzioLogbackAppender.StatusReporter reporter;
-    private final ScheduledExecutorService tasksExecutor;
     private final Map<String, String> additionalFieldsMap;
+    private ScheduledExecutorService tasksExecutor;
 
     private final List<String> throwableProxyConversionOptions = Arrays.asList("full");
     private final ThrowableProxyConverter throwableProxyConverter;
@@ -152,7 +152,14 @@ public class LogzioSender {
             logzioSenderInstances.put(logzioType, logzioSender);
             return logzioSender;
         } else {
-            reporter.warning("Already found appender configured for type " + logzioType + ", re-using the same one.");
+            reporter.info("Already found appender configured for type " + logzioType + ", re-using the same one.");
+
+            // Sometimes (For example under Spring) the framework closes logback entirely (thos closing the executor)
+            // So we need to take a new one instead, as we can grantee that nothing is running now because it is terminated.
+            if (logzioSenderInstance.tasksExecutor.isTerminated()) {
+                reporter.info("The old task executor is terminated! replacing it with a new one");
+                logzioSenderInstance.tasksExecutor = tasksExecutor;
+            }
             return logzioSenderInstance;
         }
     }
