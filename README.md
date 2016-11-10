@@ -12,7 +12,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.9</version>
+    <version>1.0.10</version>
 </dependency>
 ```
 
