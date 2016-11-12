@@ -417,4 +417,24 @@ public class LogzioSenderTest extends BaseTest {
         logRequest = assertLogReceivedByMessage(message2);
         assertLogReceivedIs(logRequest, token, type, loggerName, Level.WARN);
     }
+
+    @Test
+    public void testTokenAndLogzioUrlFromSystemEnvironment() {
+        String token = System.getenv("JAVA_HOME");
+        String type = "testType";
+        String loggerName = "testLogger";
+        int drainTimeout = 1;
+
+        String message1 = "Just a log - " + random(5);
+        Logger testLogger = createLogger("$JAVA_HOME", type, loggerName, drainTimeout, null, null, null, false, null, null);
+
+        testLogger.info(message1);
+
+        sleepSeconds(2 * drainTimeout);
+
+        assertNumberOfReceivedMsgs(1);
+        LogRequest logRequest = assertLogReceivedByMessage(message1);
+        assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO);
+    }
+
 }

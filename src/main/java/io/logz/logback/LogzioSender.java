@@ -67,11 +67,11 @@ public class LogzioSender {
                         boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds)
             throws IllegalArgumentException {
 
-        this.logzioToken = logzioToken;
+        this.logzioToken = getValueFromSystemEnvironmentIfNeeded(logzioToken);
         this.logzioType = logzioType;
         this.drainTimeout = drainTimeout;
         this.fsPercentThreshold = fsPercentThreshold;
-        this.logzioUrl = logzioUrl;
+        this.logzioUrl = getValueFromSystemEnvironmentIfNeeded(logzioUrl);
         this.socketTimeout = socketTimeout;
         this.connectTimeout = connectTimeout;
         this.debug = debug;
@@ -439,4 +439,13 @@ public class LogzioSender {
         }
         return logMessage;
     }
+
+    private String getValueFromSystemEnvironmentIfNeeded(String value) {
+        if (value.startsWith("$")) {
+            return System.getenv(value.replace("$", ""));
+        }
+
+        return value;
+    }
+
 }
