@@ -35,7 +35,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 ### Parameters
 | Parameter          | Default                              | Explained  |
 | ------------------ | ------------------------------------ | ----- |
-| **token**              | *None*                                 | Your Logz.io token, which can be found under "settings" in your account, If the value begins with `$` then the the appender look for environment variable with the name specified. For example: `$LOGZIO_TOKEN`will look for env variable named `LOGZIO_TOKEN` |
+| **token**              | *None*                                 | Your Logz.io token, which can be found under "settings" in your account, If the value begins with `$` then the appender looks for an environment variable with the name specified. For example: `$LOGZIO_TOKEN` will look for environment variable named `LOGZIO_TOKEN` |
 | **logzioType**               | *java*                                 | The [log type](http://support.logz.io/support/solutions/articles/6000103063-what-is-type-) for that appender |
 | **drainTimeoutSec**       | *5*                                    | How often the appender should drain the buffer (in seconds) |
 | **fileSystemFullPercentThreshold** | *98*                                   | The percent of used file system space at which the appender will stop buffering. When we will reach that percentage, the file system in which the buffer rests will drop all new logs until the percentage of used space drops below that threshold. Set to -1 to never stop processing new logs |
