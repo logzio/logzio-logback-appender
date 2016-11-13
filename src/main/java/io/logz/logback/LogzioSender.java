@@ -67,11 +67,11 @@ public class LogzioSender {
                         boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds)
             throws IllegalArgumentException {
 
-        this.logzioToken = logzioToken;
+        this.logzioToken = getValueFromSystemEnvironmentIfNeeded(logzioToken);
         this.logzioType = logzioType;
         this.drainTimeout = drainTimeout;
         this.fsPercentThreshold = fsPercentThreshold;
-        this.logzioUrl = logzioUrl;
+        this.logzioUrl = getValueFromSystemEnvironmentIfNeeded(logzioUrl);
         this.socketTimeout = socketTimeout;
         this.connectTimeout = connectTimeout;
         this.debug = debug;
@@ -94,13 +94,9 @@ public class LogzioSender {
                     reporter.warning("The field name '" + k + "' defined in additionalFields configuration can't be used since it's a reserved field name. This field will not be added to the outgoing log messages");
                 }
                 else {
-                    if (v.startsWith("$")) {
-                        String environmentValue = System.getenv(v.replace("$", ""));
-                        if (environmentValue != null) {
-                            additionalFieldsMap.put(k, environmentValue);
-                        }
-                    } else {
-                        additionalFieldsMap.put(k, v);
+                    String value = getValueFromSystemEnvironmentIfNeeded(v);
+                    if (value != null) {
+                        additionalFieldsMap.put(k, value);
                     }
                 }
             });
@@ -439,4 +435,13 @@ public class LogzioSender {
         }
         return logMessage;
     }
+
+    private String getValueFromSystemEnvironmentIfNeeded(String value) {
+        if (value.startsWith("$")) {
+            return System.getenv(value.replace("$", ""));
+        }
+
+        return value;
+    }
+
 }
