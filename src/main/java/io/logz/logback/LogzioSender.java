@@ -94,13 +94,9 @@ public class LogzioSender {
                     reporter.warning("The field name '" + k + "' defined in additionalFields configuration can't be used since it's a reserved field name. This field will not be added to the outgoing log messages");
                 }
                 else {
-                    if (v.startsWith("$")) {
-                        String environmentValue = System.getenv(v.replace("$", ""));
-                        if (environmentValue != null) {
-                            additionalFieldsMap.put(k, environmentValue);
-                        }
-                    } else {
-                        additionalFieldsMap.put(k, v);
+                    String value = getValueFromSystemEnvironmentIfNeeded(v);
+                    if (value != null) {
+                        additionalFieldsMap.put(k, value);
                     }
                 }
             });

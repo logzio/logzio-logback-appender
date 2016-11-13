@@ -12,7 +12,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.10</version>
+    <version>1.0.11</version>
 </dependency>
 ```
 
@@ -35,7 +35,7 @@ This appender uses [BigQueue](https://github.com/bulldog2011/bigqueue) implement
 ### Parameters
 | Parameter          | Default                              | Explained  |
 | ------------------ | ------------------------------------ | ----- |
-| **token**              | *None*                                 | Your Logz.io token, which can be found under "settings" in your account |
+| **token**              | *None*                                 | Your Logz.io token, which can be found under "settings" in your account, If the value begins with `$` then the the appender look for environment variable with the name specified. For example: `$LOGZIO_TOKEN`will look for env variable named `LOGZIO_TOKEN` |
 | **logzioType**               | *java*                                 | The [log type](http://support.logz.io/support/solutions/articles/6000103063-what-is-type-) for that appender |
 | **drainTimeoutSec**       | *5*                                    | How often the appender should drain the buffer (in seconds) |
 | **fileSystemFullPercentThreshold** | *98*                                   | The percent of used file system space at which the appender will stop buffering. When we will reach that percentage, the file system in which the buffer rests will drop all new logs until the percentage of used space drops below that threshold. Set to -1 to never stop processing new logs |
@@ -91,6 +91,10 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.11
+   - Add environment variables support to `token` and `logzioUrl` parameters
+ - 1.0.10
+   - Replace task executor in case of old executor termination
  - 1.0.9
    - Fixed an issue preventing the appender to restart if asked. Also, prevented hot-loading of logback config.xml
  - 1.0.8
