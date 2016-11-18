@@ -6,6 +6,7 @@ import com.bluejeans.common.bigqueue.BigQueue;
 import com.google.common.base.Splitter;
 import com.google.gson.JsonObject;
 import io.logz.logback.exceptions.LogzioServerErrorException;
+import org.slf4j.Marker;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -62,9 +63,9 @@ public class LogzioSender {
     private final AtomicBoolean drainRunning = new AtomicBoolean(false);
 
     private LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
-                        String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
-                        LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor,
-                        boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds)
+                         String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
+                         LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor,
+                         boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds)
             throws IllegalArgumentException {
 
         this.logzioToken = getValueFromSystemEnvironmentIfNeeded(logzioToken);
@@ -87,7 +88,7 @@ public class LogzioSender {
         queueDirectory = new File(bufferDir);
 
         if (additionalFields != null) {
-            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread", Optional.empty(), Optional.empty());
+            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", Optional.empty(), "Logger", "Thread", Optional.empty(), Optional.empty());
             Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
 
                 if (reservedFieldsTestLogMessage.get(k) != null) {
@@ -129,9 +130,9 @@ public class LogzioSender {
     }
 
     public static synchronized LogzioSender getOrCreateSenderByType(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
-                                                       String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
-                                                       LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor,
-                                                       boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds) {
+                                                                    String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
+                                                                    LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor,
+                                                                    boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds) {
 
         // We want one buffer per appender. And the only thing that should be different between appenders, is a type.
         // so that's why I create separate buffers per type.
@@ -401,14 +402,14 @@ public class LogzioSender {
     private String formatMessage(ILoggingEvent loggingEvent) {
 
         JsonObject logMessage = formatMessageAsJson(loggingEvent.getTimeStamp(), loggingEvent.getLevel().levelStr,
-                loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName(),
+                loggingEvent.getFormattedMessage(), Optional.ofNullable(loggingEvent.getMarker()), loggingEvent.getLoggerName(), loggingEvent.getThreadName(),
                 Optional.ofNullable(loggingEvent.getMDCPropertyMap()), Optional.ofNullable(loggingEvent));
 
         // Return the json, while separating lines with \n
         return logMessage.toString() + "\n";
     }
 
-    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName,
+    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, Optional<Marker> marker, String loggerName, String threadName,
                                            Optional<Map<String, String>> mdcPropertyMap, Optional<ILoggingEvent> loggingEvent) {
 
         JsonObject logMessage = new JsonObject();
@@ -421,6 +422,11 @@ public class LogzioSender {
         logMessage.addProperty("@timestamp", new Date(timestamp).toInstant().toString());
         logMessage.addProperty("loglevel",logLevelName);
         logMessage.addProperty("message", message);
+
+        if (marker.isPresent()) {
+            logMessage.addProperty("marker", marker.get().toString());
+        }
+
         logMessage.addProperty("logger", loggerName);
         logMessage.addProperty("thread", threadName);
 
