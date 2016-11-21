@@ -90,6 +90,33 @@ Will send a log to Logz.io that looks like this:
 }
 ```
 
+### Marker
+Markers are named objects used to enrich log statements, so each log line will be enriched with its own. No further configuration needed.
+```java
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+
+public class LogzioLogbackExample {
+
+    public static void main(String[] args) {
+        Logger logger = LoggerFactory.getLogger(LogzioLogbackExample.class);
+
+        Marker marker = MarkerFactory.getMarker("Fatal");
+        logger.error(marker, "This line has a fatal error");
+    }
+}
+```
+
+Will send a log to Logz.io that looks like this:
+```
+{
+    "message": "This line has a fatal error",
+    "Marker": "Fatal",
+    ... (all other fields you used to get)
+}
+```
+
 ### Release notes
  - 1.0.11
    - Add environment variables support to `token` and `logzioUrl` parameters

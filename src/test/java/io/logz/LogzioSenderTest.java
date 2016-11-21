@@ -6,9 +6,7 @@ import ch.qos.logback.classic.LoggerContext;
 import io.logz.MockLogzioBulkListener.LogRequest;
 import io.logz.logback.LogzioSender;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
+import org.slf4j.*;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -379,6 +377,35 @@ public class LogzioSenderTest extends BaseTest {
         assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO);
 
         assertThat(logRequest.getStringFieldOrNull(mdcKey)).isEqualTo(mdcValue);
+    }
+
+    @Test
+    public void testMarker() throws Exception {
+        String token = "markerToken";
+        String type = "markerType";
+        String loggerName = "markerTesting";
+
+        String markerKey = "marker";
+        String markerTestValue = "MyMarker";
+
+
+        int drainTimeout = 1;
+
+        String message1 = "Simple log line - "+random(5);
+
+        Marker marker = MarkerFactory.getMarker(markerTestValue);
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, null);
+
+        testLogger.info(marker, message1);
+
+        sleepSeconds(2 * drainTimeout);
+
+        assertNumberOfReceivedMsgs(1);
+        LogRequest logRequest = assertLogReceivedByMessage(message1);
+        assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO);
+
+        assertThat(logRequest.getStringFieldOrNull(markerKey)).isEqualTo(markerTestValue);
     }
 
     //context.reset() is called when logback loads a new logback.xml in-flight

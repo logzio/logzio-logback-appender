@@ -88,7 +88,7 @@ public class LogzioSender {
         queueDirectory = new File(bufferDir);
 
         if (additionalFields != null) {
-            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", Optional.empty(), "Logger", "Thread", Optional.empty(), Optional.empty());
+            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread", Optional.empty(), Optional.empty(), Optional.empty());
             Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
 
                 if (reservedFieldsTestLogMessage.get(k) != null) {
@@ -402,15 +402,15 @@ public class LogzioSender {
     private String formatMessage(ILoggingEvent loggingEvent) {
 
         JsonObject logMessage = formatMessageAsJson(loggingEvent.getTimeStamp(), loggingEvent.getLevel().levelStr,
-                loggingEvent.getFormattedMessage(), Optional.ofNullable(loggingEvent.getMarker()), loggingEvent.getLoggerName(), loggingEvent.getThreadName(),
-                Optional.ofNullable(loggingEvent.getMDCPropertyMap()), Optional.ofNullable(loggingEvent));
+                loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName(),
+                Optional.ofNullable(loggingEvent.getMarker()), Optional.ofNullable(loggingEvent.getMDCPropertyMap()), Optional.ofNullable(loggingEvent));
 
         // Return the json, while separating lines with \n
         return logMessage.toString() + "\n";
     }
 
-    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, Optional<Marker> marker, String loggerName, String threadName,
-                                           Optional<Map<String, String>> mdcPropertyMap, Optional<ILoggingEvent> loggingEvent) {
+    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName,
+                                           Optional<Marker> marker, Optional<Map<String, String>> mdcPropertyMap, Optional<ILoggingEvent> loggingEvent) {
 
         JsonObject logMessage = new JsonObject();
 
@@ -421,12 +421,12 @@ public class LogzioSender {
 
         logMessage.addProperty("@timestamp", new Date(timestamp).toInstant().toString());
         logMessage.addProperty("loglevel",logLevelName);
-        logMessage.addProperty("message", message);
 
         if (marker.isPresent()) {
             logMessage.addProperty("marker", marker.get().toString());
         }
 
+        logMessage.addProperty("message", message);
         logMessage.addProperty("logger", loggerName);
         logMessage.addProperty("thread", threadName);
 
