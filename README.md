@@ -118,6 +118,8 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.12
+   - Add Marker support
  - 1.0.11
    - Add environment variables support to `token` and `logzioUrl` parameters
  - 1.0.10
