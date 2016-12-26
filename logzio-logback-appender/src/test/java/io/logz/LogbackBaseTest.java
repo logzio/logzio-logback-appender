@@ -3,6 +3,7 @@ package io.logz;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Context;
 import io.logz.logback.LogzioLogbackAppender;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
@@ -17,11 +18,11 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public abstract class BaseTest {
+public abstract class LogbackBaseTest {
 
-    private final static Logger logger = LoggerFactory.getLogger(BaseTest.class);
+    private final static Logger logger = LoggerFactory.getLogger(LogbackBaseTest.class);
     protected static final String LISTENER_ADDRESS = "localhost";
-    protected MockLogzioBulkListener mockListener;
+    protected LogbackMockLogzioBulkListener mockListener;
     protected int port;
     protected LogzioLogbackAppender logzioLogbackAppender;
 
@@ -34,7 +35,7 @@ public abstract class BaseTest {
                 ServerSocket serverSocket = new ServerSocket(0);
                 serverSocket.close();
                 availablePort = serverSocket.getLocalPort();;
-                mockListener = new MockLogzioBulkListener(LISTENER_ADDRESS, availablePort);
+                mockListener = new LogbackMockLogzioBulkListener(LISTENER_ADDRESS, availablePort);
                 logger.info("Starting Mock listener on port {}", availablePort);
                 mockListener.start();
                 port = availablePort;
@@ -90,7 +91,7 @@ public abstract class BaseTest {
         if (bufferDir != null) {
             logzioLogbackAppender.setBufferDir(bufferDir);
         } else {
-            File tempDir = TestEnvironment.createTempDirectory();
+            File tempDir = LogbackTestEnvironment.createTempDirectory();
             tempDir.deleteOnExit();
             logzioLogbackAppender.setBufferDir(tempDir.getAbsolutePath());
         }
@@ -107,7 +108,7 @@ public abstract class BaseTest {
         }
 
         logzioLogbackAppender.start();
-        assertThat(logzioLogbackAppender.isStarted()).isTrue();
+        Assertions.assertThat(logzioLogbackAppender.isStarted()).isTrue();
         logbackLogger.addAppender(logzioLogbackAppender);
         logbackLogger.setAdditive(false);
 
@@ -119,30 +120,30 @@ public abstract class BaseTest {
     }
 
     protected void assertNumberOfReceivedMsgs(int count) {
-        assertThat(mockListener.getNumberOfReceivedLogs())
+        Assertions.assertThat(mockListener.getNumberOfReceivedLogs())
                 .describedAs("Messages on mock listener: {}", mockListener.getReceivedMsgs())
                 .isEqualTo(count);
     }
 
     protected void assertLogReceivedIs(String message, String token, String type, String loggerName, Level level) {
-        MockLogzioBulkListener.LogRequest log = assertLogReceivedByMessage(message);
+        LogbackMockLogzioBulkListener.LogRequest log = assertLogReceivedByMessage(message);
         assertLogReceivedIs(log, token, type, loggerName, level);
     }
 
-    protected void assertLogReceivedIs(MockLogzioBulkListener.LogRequest log, String token, String type, String loggerName, Level level) {
-        assertThat(log.getToken()).isEqualTo(token);
-        assertThat(log.getType()).isEqualTo(type);
-        assertThat(log.getLogger()).isEqualTo(loggerName);
-        assertThat(log.getLogLevel()).isEqualTo(level.toString());
+    protected void assertLogReceivedIs(LogbackMockLogzioBulkListener.LogRequest log, String token, String type, String loggerName, Level level) {
+        Assertions.assertThat(log.getToken()).isEqualTo(token);
+        Assertions.assertThat(log.getType()).isEqualTo(type);
+        Assertions.assertThat(log.getLogger()).isEqualTo(loggerName);
+        Assertions.assertThat(log.getLogLevel()).isEqualTo(level.toString());
     }
 
-    protected MockLogzioBulkListener.LogRequest assertLogReceivedByMessage(String message) {
-        Optional<MockLogzioBulkListener.LogRequest> logRequest = mockListener.getLogByMessageField(message);
+    protected LogbackMockLogzioBulkListener.LogRequest assertLogReceivedByMessage(String message) {
+        Optional<LogbackMockLogzioBulkListener.LogRequest> logRequest = mockListener.getLogByMessageField(message);
         assertThat(logRequest.isPresent()).describedAs("Log with message '"+message+"' received").isTrue();
         return logRequest.get();
     }
 
-    protected void assertAdditionalFields(MockLogzioBulkListener.LogRequest logRequest, Map<String, String> additionalFields) {
+    protected void assertAdditionalFields(LogbackMockLogzioBulkListener.LogRequest logRequest, Map<String, String> additionalFields) {
         additionalFields.forEach((field, value) ->  {
             String fieldValueInLog = logRequest.getStringFieldOrNull(field);
             assertThat(fieldValueInLog)

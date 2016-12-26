@@ -1,28 +1,18 @@
-package io.logz.logback;
+package io.logz.sender;
 
-import ch.qos.logback.classic.pattern.ThrowableProxyConverter;
-import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.bluejeans.common.bigqueue.BigQueue;
-import com.google.common.base.Splitter;
-import com.google.gson.JsonObject;
-import io.logz.logback.exceptions.LogzioServerErrorException;
-import org.slf4j.Marker;
+import io.logz.sender.exceptions.LogzioServerErrorException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class LogzioSender {
+public class LogzioSender<T> {
     private static final int MAX_SIZE_IN_BYTES = 3 * 1024 * 1024;  // 3 MB
     public static final int INITIAL_WAIT_BEFORE_RETRY_MS = 2000;
     public static final int MAX_RETRIES_ATTEMPTS = 3;
@@ -53,19 +43,19 @@ public class LogzioSender {
     private final int socketTimeout;
     private final int connectTimeout;
     private final boolean debug;
-    private final LogzioLogbackAppender.StatusReporter reporter;
-    private final Map<String, String> additionalFieldsMap;
+    private final ILogzioStatusReporter reporter;
+
     private ScheduledExecutorService tasksExecutor;
 
-    private final List<String> throwableProxyConversionOptions = Arrays.asList("full");
-    private final ThrowableProxyConverter throwableProxyConverter;
+    private final LogzioBaseJsonFormatter<T> jsonFormatter;
+
     private final int gcPersistedQueueFilesIntervalSeconds;
     private final AtomicBoolean drainRunning = new AtomicBoolean(false);
 
     private LogzioSender(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
                          String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
-                         LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor,
-                         boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds)
+                         ILogzioStatusReporter reporter, ScheduledExecutorService tasksExecutor,
+                         int gcPersistedQueueFilesIntervalSeconds, LogzioBaseJsonFormatter<T> jsonFormatter)
             throws IllegalArgumentException {
 
         this.logzioToken = getValueFromSystemEnvironmentIfNeeded(logzioToken);
@@ -78,7 +68,6 @@ public class LogzioSender {
         this.debug = debug;
         this.reporter = reporter;
         this.gcPersistedQueueFilesIntervalSeconds = gcPersistedQueueFilesIntervalSeconds;
-        additionalFieldsMap = new HashMap<>();
 
         if (this.fsPercentThreshold == -1) {
             dontCheckEnoughDiskSpace = true;
@@ -87,31 +76,6 @@ public class LogzioSender {
         logsBuffer = new BigQueue(bufferDir, "logzio-logback-appender");
         queueDirectory = new File(bufferDir);
 
-        if (additionalFields != null) {
-            JsonObject reservedFieldsTestLogMessage = formatMessageAsJson(new Date().getTime(), "Level", "Message", "Logger", "Thread", Optional.empty(), Optional.empty(), Optional.empty());
-            Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
-
-                if (reservedFieldsTestLogMessage.get(k) != null) {
-                    reporter.warning("The field name '" + k + "' defined in additionalFields configuration can't be used since it's a reserved field name. This field will not be added to the outgoing log messages");
-                }
-                else {
-                    String value = getValueFromSystemEnvironmentIfNeeded(v);
-                    if (value != null) {
-                        additionalFieldsMap.put(k, value);
-                    }
-                }
-            });
-            reporter.info("The additional fields that would be added: " + additionalFieldsMap.toString());
-        }
-
-        try {
-            if (addHostname) {
-                String hostname = InetAddress.getLocalHost().getHostName();
-                additionalFieldsMap.put("hostname", hostname);
-            }
-        } catch (UnknownHostException e) {
-            reporter.warning("The configuration addHostName was specified but the host could not be resolved, thus the field 'hostname' will not be added", e);
-        }
 
         try {
             logzioListenerUrl = new URL(this.logzioUrl + "/?token=" + this.logzioToken + "&type=" + this.logzioType);
@@ -122,17 +86,15 @@ public class LogzioSender {
 
         this.tasksExecutor = tasksExecutor;
 
-        throwableProxyConverter = new ThrowableProxyConverter();
-        throwableProxyConverter.setOptionList(throwableProxyConversionOptions);
-        throwableProxyConverter.start();
+        this.jsonFormatter = jsonFormatter;
 
         debug("Created new LogzioSender class");
     }
 
     public static synchronized LogzioSender getOrCreateSenderByType(String logzioToken, String logzioType, int drainTimeout, int fsPercentThreshold, String bufferDir,
                                                                     String logzioUrl, int socketTimeout, int connectTimeout, boolean debug,
-                                                                    LogzioLogbackAppender.StatusReporter reporter, ScheduledExecutorService tasksExecutor,
-                                                                    boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds) {
+                                                                    ILogzioStatusReporter reporter, ScheduledExecutorService tasksExecutor,
+                                                                    int gcPersistedQueueFilesIntervalSeconds, LogzioBaseJsonFormatter jsonFormatter) {
 
         // We want one buffer per appender. And the only thing that should be different between appenders, is a type.
         // so that's why I create separate buffers per type.
@@ -144,7 +106,7 @@ public class LogzioSender {
 
             LogzioSender logzioSender = new LogzioSender(logzioToken, logzioType, drainTimeout, fsPercentThreshold,
                     bufferDir, logzioUrl, socketTimeout, connectTimeout, debug, reporter,
-                    tasksExecutor, addHostname, additionalFields, gcPersistedQueueFilesIntervalSeconds);
+                    tasksExecutor, gcPersistedQueueFilesIntervalSeconds, jsonFormatter);
 
             logzioSenderInstances.put(logzioType, logzioSender);
             return logzioSender;
@@ -208,11 +170,10 @@ public class LogzioSender {
         }
     }
 
-    public void send(ILoggingEvent message) {
-
+    public void send(T message) {
         // Shading bigqueue logs. Its irrelevant and super verbose
-        if (! message.getLoggerName().contains("io.logz.com.bluejeans.common.bigqueue")) {
-            enqueue(formatMessage(message).getBytes());
+        if (!jsonFormatter.getLoggerName(message).contains("com.bluejeans.common.bigqueue")) {
+            enqueue(jsonFormatter.formatMessage(message).getBytes());
         }
     }
 
@@ -234,8 +195,7 @@ public class LogzioSender {
                     queueDirectory.getAbsolutePath(), actualUsedFsPercent, fsPercentThreshold));
 
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     }
@@ -293,8 +253,7 @@ public class LogzioSender {
             ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream(sizeInBytes(messages));
             for (FormattedLogMessage currMessage : messages) byteOutputStream.write(currMessage.getMessage());
             return byteOutputStream.toByteArray();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
 
             throw new RuntimeException(e);
         }
@@ -352,8 +311,7 @@ public class LogzioSender {
                     }
 
                     shouldRetry = shouldRetry(responseCode);
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     savedException = e;
                     debug("Got IO exception - " + e.getMessage());
                 }
@@ -399,55 +357,13 @@ public class LogzioSender {
         }
     }
 
-    private String formatMessage(ILoggingEvent loggingEvent) {
-
-        JsonObject logMessage = formatMessageAsJson(loggingEvent.getTimeStamp(), loggingEvent.getLevel().levelStr,
-                loggingEvent.getFormattedMessage(), loggingEvent.getLoggerName(), loggingEvent.getThreadName(),
-                Optional.ofNullable(loggingEvent.getMarker()), Optional.ofNullable(loggingEvent.getMDCPropertyMap()), Optional.ofNullable(loggingEvent));
-
-        // Return the json, while separating lines with \n
-        return logMessage.toString() + "\n";
-    }
-
-    private JsonObject formatMessageAsJson(long timestamp, String logLevelName, String message, String loggerName, String threadName,
-                                           Optional<Marker> marker, Optional<Map<String, String>> mdcPropertyMap, Optional<ILoggingEvent> loggingEvent) {
-
-        JsonObject logMessage = new JsonObject();
-
-        // Adding MDC first, as I dont want it to collide with any one of the following fields
-        if (mdcPropertyMap.isPresent()) {
-            mdcPropertyMap.get().forEach(logMessage::addProperty);
-        }
-
-        logMessage.addProperty("@timestamp", new Date(timestamp).toInstant().toString());
-        logMessage.addProperty("loglevel",logLevelName);
-
-        if (marker.isPresent()) {
-            logMessage.addProperty("marker", marker.get().toString());
-        }
-
-        logMessage.addProperty("message", message);
-        logMessage.addProperty("logger", loggerName);
-        logMessage.addProperty("thread", threadName);
-
-        if (loggingEvent.isPresent()) {
-            if (loggingEvent.get().getThrowableProxy() != null) {
-                logMessage.addProperty("exception", throwableProxyConverter.convert(loggingEvent.get()));
-            }
-        }
-
-        if (additionalFieldsMap != null) {
-            additionalFieldsMap.forEach(logMessage::addProperty);
-        }
-        return logMessage;
-    }
-
-    private String getValueFromSystemEnvironmentIfNeeded(String value) {
+    String getValueFromSystemEnvironmentIfNeeded(String value) {
         if (value.startsWith("$")) {
             return System.getenv(value.replace("$", ""));
         }
-
         return value;
     }
+
+
 
 }

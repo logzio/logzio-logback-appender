@@ -11,6 +11,7 @@
 
     <modules>
         <module>logzio-logback-appender</module>
+        <module>logzio-log-sender</module>
     </modules>
 
     <build>

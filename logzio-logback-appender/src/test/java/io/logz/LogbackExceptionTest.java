@@ -1,7 +1,7 @@
 package io.logz;
 
 import ch.qos.logback.classic.Level;
-import io.logz.MockLogzioBulkListener.LogRequest;
+import io.logz.LogbackMockLogzioBulkListener.LogRequest;
 import org.junit.Test;
 import org.slf4j.Logger;
 
@@ -12,15 +12,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Created by roiravhon on 9/11/16.
  */
-public class ExceptionTest extends BaseTest {
+public class LogbackExceptionTest extends LogbackBaseTest {
 
     @Test
     public void checkExactStackTrace() throws InterruptedException {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        final MyRunner.ExceptionGenerator exceptionGenerator = new MyRunner.ExceptionGenerator();
+        final LogbackMyRunner.ExceptionGenerator exceptionGenerator = new LogbackMyRunner.ExceptionGenerator();
 
         // We need to generate an exception with constant stack trace
-        new Thread(new MyRunner(countDownLatch, exceptionGenerator)).start();
+        new Thread(new LogbackMyRunner(countDownLatch, exceptionGenerator)).start();
         countDownLatch.await();
 
         String token = "exceptionToken";
@@ -31,11 +31,11 @@ public class ExceptionTest extends BaseTest {
         String message1 = "Any line change here can cause the test to break";
 
         String expectedException = "java.lang.RuntimeException: Got NPE!\n" +
-                "\tat io.logz.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:33)\n" +
-                "\tat io.logz.MyRunner.run(MyRunner.java:18)\n" +
+                "\tat io.logz.LogbackMyRunner$ExceptionGenerator.generateNPE(LogbackMyRunner.java:33)\n" +
+                "\tat io.logz.LogbackMyRunner.run(LogbackMyRunner.java:18)\n" +
                 "\tat java.lang.Thread.run(Thread.java:745)\n" +
                 "Caused by: java.lang.NullPointerException: null\n" +
-                "\tat io.logz.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:31)\n" +
+                "\tat io.logz.LogbackMyRunner$ExceptionGenerator.generateNPE(LogbackMyRunner.java:31)\n" +
                 "\t... 2 common frames omitted\n";
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, null);

@@ -3,8 +3,8 @@ package io.logz;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
-import io.logz.MockLogzioBulkListener.LogRequest;
-import io.logz.logback.LogzioSender;
+import io.logz.LogbackMockLogzioBulkListener.LogRequest;
+import io.logz.sender.LogzioSender;
 import org.junit.Test;
 import org.slf4j.*;
 
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
-public class LogzioSenderTest extends BaseTest {
+public class LogbackLogzioSenderTest extends LogbackBaseTest {
 
     @Test
     public void simpleAppending() throws Exception {
@@ -102,7 +102,7 @@ public class LogzioSenderTest extends BaseTest {
         String type = "justTestingExistence";
         String loggerName = "changeBufferLocation";
         int drainTimeout = 10;
-        File tempDirectory = TestEnvironment.createTempDirectory();
+        File tempDirectory = LogbackTestEnvironment.createTempDirectory();
         String bufferDir = new File(tempDirectory, "dirWhichDoesNotExists").getAbsolutePath();
 
         String message1 = "Just sending something - " + random(5);
@@ -124,7 +124,7 @@ public class LogzioSenderTest extends BaseTest {
         String loggerName = "fsPercentDrop";
         int drainTimeoutSec = 1;
 
-        File tempDirectoryThatWillBeInTheSameFsAsTheBuffer = TestEnvironment.createTempDirectory();
+        File tempDirectoryThatWillBeInTheSameFsAsTheBuffer = LogbackTestEnvironment.createTempDirectory();
         tempDirectoryThatWillBeInTheSameFsAsTheBuffer.deleteOnExit();
 
         int fsPercentDrop = 100 - ((int) (((double) tempDirectoryThatWillBeInTheSameFsAsTheBuffer.getUsableSpace() /

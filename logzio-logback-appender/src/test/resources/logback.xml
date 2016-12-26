@@ -18,7 +18,7 @@
     </appender>
 
     <logger name="io.logz" level="INFO"/>
-    <logger name="io.logz.MockLogzioBulkListener" level="INFO"/>
+    <logger name="io.logz.LogbackMockLogzioBulkListener" level="INFO"/>
 
 
     <root level="INFO">

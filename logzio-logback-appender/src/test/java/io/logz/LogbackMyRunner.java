@@ -5,11 +5,11 @@ import java.util.concurrent.CountDownLatch;
 /**
  * This is for exception stack trace. Don't change any line here otherwise the test will fail
  */
-public class MyRunner implements Runnable {
+public class LogbackMyRunner implements Runnable {
     final CountDownLatch countDownLatch;
     final ExceptionGenerator exceptionGenerator;
 
-    public MyRunner(CountDownLatch countDownLatch, ExceptionGenerator exceptionGenerator) {
+    public LogbackMyRunner(CountDownLatch countDownLatch, ExceptionGenerator exceptionGenerator) {
         this.countDownLatch = countDownLatch;
         this.exceptionGenerator = exceptionGenerator;
     }

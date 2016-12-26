@@ -1,4 +1,4 @@
-package io.logz.logback.exceptions;
+package io.logz.sender.exceptions;
 
 public class LogzioServerErrorException extends Exception {
 
