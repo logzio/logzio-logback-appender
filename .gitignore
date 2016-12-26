@@ -1,4 +1,7 @@
 .idea
-logzio-logback-appender.iml
-target
 dependency-reduced-pom.xml
+/logzio-java-appenders.iml
+/.idea/
+/logzio-logback-appender/logzio-logback-appender.iml
+/logzio-logback-appender/target/
+/logzio-logback-appender/dependency-reduced-pom.xml
