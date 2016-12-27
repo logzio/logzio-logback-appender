@@ -2,8 +2,6 @@ package io.logz.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
-import io.logz.sender.ILogzioStatusReporter;
-import io.logz.sender.LogzioSender;
 
 import java.io.File;
 
@@ -47,7 +45,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         if (drainTimeoutSec < 1) {
             this.drainTimeoutSec = 1;
             addInfo("Got unsupported drain timeout " + drainTimeoutSec + ". The timeout must be number greater then 1. I have set to 1 as fallback.");
-        } else {
+        }
+        else {
             this.drainTimeoutSec = drainTimeoutSec;
         }
     }
@@ -148,28 +147,29 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             File bufferFile = new File(bufferDir);
             if (bufferFile.exists()) {
                 if (!bufferFile.canWrite()) {
-                    addError("We cant write to your bufferDir location: " + bufferFile.getAbsolutePath());
+                    addError("We cant write to your bufferDir location: "+bufferFile.getAbsolutePath());
                     return;
                 }
             } else {
                 if (!bufferFile.mkdirs()) {
-                    addError("We cant create your bufferDir location: " + bufferFile.getAbsolutePath());
+                    addError("We cant create your bufferDir location: "+bufferFile.getAbsolutePath());
                     return;
                 }
             }
-        } else {
+        }
+        else {
             bufferDir = System.getProperty("java.io.tmpdir") + "/logzio-logback-buffer/" + logzioType;
         }
 
         try {
-
-            ILogzioStatusReporter reporter = new StatusReporter();
+            StatusReporter reporter = new StatusReporter();
             logzioSender = LogzioSender.getOrCreateSenderByType(logzioToken, logzioType, drainTimeoutSec, fileSystemFullPercentThreshold,
-                    bufferDir, logzioUrl, socketTimeout, connectTimeout, debug,
-                    reporter, context.getScheduledExecutorService(), gcPersistedQueueFilesIntervalSeconds,
-                    new LogzioLogbackJsonFormatter(additionalFields,addHostname,reporter));
+                                            bufferDir, logzioUrl, socketTimeout, connectTimeout, debug,
+                                            reporter, context.getScheduledExecutorService(), addHostname,
+                                            additionalFields, gcPersistedQueueFilesIntervalSeconds);
             logzioSender.start();
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             addError("Something unexpected happened while generating connection to logz.io");
             addError("Exception: " + e.getMessage(), e);
             return;  // Not signaling super as up, we have something we cant deal with.
@@ -189,37 +189,24 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         logzioSender.send(loggingEvent);
     }
 
-    class StatusReporter implements ILogzioStatusReporter{
-
-        @Override
+    public class StatusReporter {
         public void error(String msg) {
             addError(msg);
         }
-
-        @Override
         public void error(String msg, Throwable e) {
             addError(msg, e);
         }
-
-        @Override
         public void warning(String msg) {
             addWarn(msg);
         }
-
-        @Override
         public void warning(String msg, Throwable e) {
             addWarn(msg, e);
         }
-
-        @Override
         public void info(String msg) {
             addInfo(msg);
         }
-
-        @Override
         public void info(String msg, Throwable e) {
-            addInfo(msg,e);
+            addInfo(msg, e);
         }
     }
-
 }

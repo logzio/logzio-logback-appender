@@ -5,5 +5,3 @@ dependency-reduced-pom.xml
 /logzio-logback-appender/logzio-logback-appender.iml
 /logzio-logback-appender/target/
 /logzio-logback-appender/dependency-reduced-pom.xml
-/logzio-log-sender/logzio-log-sender.iml
-/logzio-log-sender/target/

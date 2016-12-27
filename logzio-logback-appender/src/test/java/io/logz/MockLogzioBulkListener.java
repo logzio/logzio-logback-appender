@@ -25,7 +25,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MockLogzioBulkListener implements Closeable {
-   private final static Logger logger = LoggerFactory.getLogger(MockLogzioBulkListener.class);
+    private final static Logger logger = LoggerFactory.getLogger(MockLogzioBulkListener.class);
 
     private Server server;
     private Queue<LogRequest> logRequests = new ConcurrentLinkedQueue<>();

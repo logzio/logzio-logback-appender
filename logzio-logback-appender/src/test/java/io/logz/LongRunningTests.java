@@ -14,9 +14,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class LongRunningSenderTests extends BaseSenderTest {
+public class LongRunningTests extends BaseTest {
 
-    private final static Logger logger = LoggerFactory.getLogger(LongRunningSenderTests.class);
+    private final static Logger logger = LoggerFactory.getLogger(LongRunningTests.class);
 
     @Test
     public void testDeadLock() throws InterruptedException {
@@ -25,9 +25,9 @@ public class LongRunningSenderTests extends BaseSenderTest {
         String loggerName = "deadlockLogger";
         int drainTimeout = 1;
         Integer gcInterval = 1;
-        TestLogzioSender testSender = createLogzioSender(token, type, loggerName, drainTimeout, 98, null, 10*1000);
-
-
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, null, null, null, false, null, gcInterval);
+        ch.qos.logback.classic.Logger blueJeansLogger =  (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("com.bluejeans");
+        blueJeansLogger.addAppender(logzioLogbackAppender);
 
         List<Thread> threads = new ArrayList<>();
         try {
@@ -37,7 +37,7 @@ public class LongRunningSenderTests extends BaseSenderTest {
             for (int j = 1; j < threadCount; j++) {
                 Thread thread = new Thread(() -> {
                     for (int i = 1; i <= msgCount; i++) {
-                        testSender.sendMessage(new TestLogzioMessage("Hello "+i, loggerName,System.currentTimeMillis() ));
+                        testLogger.warn("Hello {}", i);
                         if (Thread.interrupted()) {
                             logger.info("Stopping thread - interrupted");
                             break;
@@ -68,7 +68,7 @@ public class LongRunningSenderTests extends BaseSenderTest {
 
         } finally {
             threads.forEach(Thread::interrupt);
-            testSender.stop();
+            logzioLogbackAppender.stop();
         }
 
     }

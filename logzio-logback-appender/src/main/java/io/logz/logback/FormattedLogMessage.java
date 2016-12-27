@@ -1,4 +1,4 @@
-package io.logz.sender;
+package io.logz.logback;
 
 public class FormattedLogMessage {
 
