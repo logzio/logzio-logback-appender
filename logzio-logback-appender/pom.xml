@@ -185,5 +185,11 @@
             <version>9.3.9.M1</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.logz.appenders</groupId>
+            <artifactId>logzio-common-test</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

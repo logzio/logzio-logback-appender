@@ -10,20 +10,20 @@ import java.util.concurrent.Executors;
  * Created by MarinaRazumovsky on 26/12/2016.
  */
 
-public class TestLogzioSender  implements ILogzioStatusReporter {
+public class SimpleTestSender implements ILogzioStatusReporter {
 
-    private LogzioSender<TestLogzioMessage> logzioSender;
+    private LogzioSender<SimpleTestMessage> logzioSender;
 
 
-    public TestLogzioSender(String token, String type, int drainTimeout, int fsThreshold, String bufferDir,
+    public SimpleTestSender(String token, String type, int drainTimeout, int fsThreshold, String bufferDir,
                             String logzioUrl, int socketTimeout, int connectTimeout, boolean debug, int interval) {
         logzioSender = LogzioSender.getOrCreateSenderByType(token, type, drainTimeout,fsThreshold, bufferDir,
                 logzioUrl, socketTimeout, connectTimeout, debug, this, Executors.newScheduledThreadPool(2),interval,
-                new TestLogzioMessage.TestLogzioMessageFormatter("", false, this, Collections.emptySet() ) );
+                new SimpleTestMessage.TestLogzioMessageFormatter("", false, this, Collections.emptySet() ) );
         logzioSender.start();
     }
 
-    public void sendMessage(TestLogzioMessage message) {
+    public void sendMessage(SimpleTestMessage message) {
         logzioSender.send(message);
     }
 

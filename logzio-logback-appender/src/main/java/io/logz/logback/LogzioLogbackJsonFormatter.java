@@ -3,7 +3,6 @@ package io.logz.logback;
 import ch.qos.logback.classic.pattern.ThrowableProxyConverter;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.google.gson.JsonObject;
-
 import io.logz.sender.ILogzioStatusReporter;
 import io.logz.sender.LogzioBaseJsonFormatter;
 import org.slf4j.Marker;

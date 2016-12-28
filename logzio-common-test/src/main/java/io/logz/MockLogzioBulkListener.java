@@ -77,9 +77,9 @@ public class MockLogzioBulkListener implements Closeable {
                         }
 
                         String queryString = request.getQueryString();
-
-                        logRequests.add(new LogRequest(queryString, line));
-                            logger.debug("got log: {} ", line);
+                        LogRequest tmpRequest = new LogRequest(queryString, line);
+                        logRequests.add(tmpRequest);
+                        logger.debug("got log: {} ", line);
                         }
                 );
 
@@ -89,7 +89,7 @@ public class MockLogzioBulkListener implements Closeable {
                 baseRequest.setHandled(true);
             }
         });
-        logger.debug("Created a mock listener ("+this+")");
+        logger.info("Created a mock listener ("+this+")");
     }
 
     public void start() throws Exception {
