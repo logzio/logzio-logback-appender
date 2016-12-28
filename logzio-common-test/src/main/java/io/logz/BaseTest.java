@@ -6,7 +6,6 @@ import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.util.Map;
@@ -15,13 +14,12 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public abstract class BaseSenderTest {
+public abstract class BaseTest {
 
-    private final static Logger logger = LoggerFactory.getLogger(BaseSenderTest.class);
+    protected final static Logger logger = LoggerFactory.getLogger(BaseTest.class);
     protected static final String LISTENER_ADDRESS = "localhost";
     protected MockLogzioBulkListener mockListener;
     protected int port;
-    protected TestLogzioSender testLogzioSender;
 
     @Before
     public void startMockListener() throws Exception {
@@ -53,26 +51,23 @@ public abstract class BaseSenderTest {
         mockListener.stop();
     }
 
-
-    protected TestLogzioSender createLogzioSender(String token, String type, String loggerName, Integer drainTimeout,
-                                        Integer fsPercentThreshold, String bufferDir, Integer socketTimeout) {
-
-        logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, fsPercentThreshold={}, bufferDir={}, socketTimeout={},",
-                loggerName, token, type, drainTimeout, fsPercentThreshold, bufferDir, socketTimeout);
-
-        if (bufferDir == null) {
-            File tempDir = TestEnvironment.createTempDirectory();
-            tempDir.deleteOnExit();
-            bufferDir = tempDir.getAbsolutePath();
-        }
-        testLogzioSender = new TestLogzioSender(token,type,drainTimeout,fsPercentThreshold,bufferDir,
-                "http://" + LISTENER_ADDRESS + ":" + port,socketTimeout,socketTimeout,true, 30);
-
-        return testLogzioSender;
+    protected MockLogzioBulkListener.LogRequest assertLogReceivedByMessage(String message) {
+        Optional<MockLogzioBulkListener.LogRequest> logRequest = mockListener.getLogByMessageField(message);
+        assertThat(logRequest.isPresent()).describedAs("Log with message '"+message+"' received").isTrue();
+        return logRequest.get();
     }
 
     protected String random(int numberOfChars) {
         return UUID.randomUUID().toString().substring(0, numberOfChars-1);
+    }
+
+    protected void sleepSeconds(int seconds) {
+        logger.info("Sleeping {} [sec]...", seconds);
+        try {
+            Thread.sleep(seconds * 1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected void assertNumberOfReceivedMsgs(int count) {
@@ -81,26 +76,23 @@ public abstract class BaseSenderTest {
                 .isEqualTo(count);
     }
 
-    protected void assertLogReceivedIs(String message, String token, String type, String loggerName) {
+    protected void assertLogReceivedIs(String message, String token, String type, String loggerName, Optional<?> level) {
         MockLogzioBulkListener.LogRequest log = assertLogReceivedByMessage(message);
-        assertLogReceivedIs(log, token, type, loggerName);
+        assertLogReceivedIs(log, token, type, loggerName, level);
     }
 
-    protected void assertLogReceivedIs(MockLogzioBulkListener.LogRequest log, String token, String type, String loggerName) {
+    protected void assertLogReceivedIs(MockLogzioBulkListener.LogRequest log, String token, String type, String loggerName, Optional<?> level) {
         Assertions.assertThat(log.getToken()).isEqualTo(token);
         Assertions.assertThat(log.getType()).isEqualTo(type);
         Assertions.assertThat(log.getLogger()).isEqualTo(loggerName);
-
+        if ( level.isPresent()) {
+            Assertions.assertThat(log.getLogLevel()).isEqualTo(level.get().toString());
+        }
     }
 
-    protected MockLogzioBulkListener.LogRequest assertLogReceivedByMessage(String message) {
-        Optional<MockLogzioBulkListener.LogRequest> logRequest = mockListener.getLogByMessageField(message);
-        assertThat(logRequest.isPresent()).describedAs("Log with message '"+message+"' received").isTrue();
-        return logRequest.get();
-    }
 
     protected void assertAdditionalFields(MockLogzioBulkListener.LogRequest logRequest, Map<String, String> additionalFields) {
-        additionalFields.forEach((field, value) ->  {
+        additionalFields.forEach((field, value) -> {
             String fieldValueInLog = logRequest.getStringFieldOrNull(field);
             assertThat(fieldValueInLog)
                     .describedAs("Field '{}' in Log [{}]", field, logRequest.getJsonObject().toString())
@@ -109,12 +101,10 @@ public abstract class BaseSenderTest {
         });
     }
 
-    protected void sleepSeconds(int seconds) {
-//        logger.info("Sleeping {} [sec]...", seconds);
-        try {
-            Thread.sleep(seconds * 1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    abstract TestSenderWrapper getTestSenderWrapper(String token, String type, String loggerName, Integer drainTimeout, Integer fsPercentThreshold,
+                                                    String bufferDir, Integer socketTimeout, boolean addHostname, String additionalFields, int gcPersistedQueueFilesIntervalSeconds, int port) ;
+
+
+
 }
+

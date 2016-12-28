@@ -10,14 +10,14 @@ import java.util.Set;
 /**
  * Created by MarinaRazumovsky on 26/12/2016.
  */
-public class TestLogzioMessage {
+public class SimpleTestMessage {
 
     private String message;
     private long timestamp;
     private String loggerName;
 
 
-    public TestLogzioMessage(String message, String loggerName, long timestamp) {
+    public SimpleTestMessage(String message, String loggerName, long timestamp) {
         this.message = message;
         this.loggerName = loggerName;
         this.timestamp = timestamp;
@@ -47,14 +47,14 @@ public class TestLogzioMessage {
         this.loggerName = loggerName;
     }
 
-    public static class TestLogzioMessageFormatter extends LogzioBaseJsonFormatter<TestLogzioMessage> {
+    public static class TestLogzioMessageFormatter extends LogzioBaseJsonFormatter<SimpleTestMessage> {
 
         public TestLogzioMessageFormatter(String additionalFields, boolean addHostname, ILogzioStatusReporter reporter, Set fieldsSet) {
             super(additionalFields, addHostname, reporter, Collections.emptySet());
         }
 
         @Override
-        protected JsonObject formatMessageAsJson(TestLogzioMessage loggingEvent) {
+        protected JsonObject formatMessageAsJson(SimpleTestMessage loggingEvent) {
             JsonObject obj = new JsonObject();
             obj.addProperty(LogzioBaseJsonFormatter.TIMESTAMP,loggingEvent.getTimestamp());
             obj.addProperty(LogzioBaseJsonFormatter.MESSAGE, loggingEvent.getMessage());
@@ -64,7 +64,7 @@ public class TestLogzioMessage {
         }
 
         @Override
-        protected String getLoggerName(TestLogzioMessage loggingEvent) {
+        protected String getLoggerName(SimpleTestMessage loggingEvent) {
             return loggingEvent.getLoggerName();
         }
 

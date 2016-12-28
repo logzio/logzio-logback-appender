@@ -12,6 +12,7 @@
     <modules>
         <module>logzio-logback-appender</module>
         <module>logzio-log-sender</module>
+        <module>logzio-common-test</module>
     </modules>
 
     <build>
