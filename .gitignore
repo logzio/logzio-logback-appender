@@ -1,4 +1,5 @@
 .idea
-logzio-logback-appender.iml
-target
 dependency-reduced-pom.xml
+*.iml
+# General
+target/
