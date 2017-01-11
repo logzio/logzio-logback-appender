@@ -6,7 +6,7 @@
 
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.12</version>
+    <version>1.0.13-SNAPSHOT</version>
 
     <packaging>jar</packaging>
     <name>Logz.io Logback Appender</name>
@@ -116,23 +116,14 @@
                     <minimizeJar>true</minimizeJar>
                     <artifactSet>
                         <includes>
+                            <include>io.logz.sender:logzio-sender</include>
                             <include>com.google.guava:guava</include>
-                            <include>com.bluejeans.common:bigqueue</include>
-                            <include>com.google.code.gson:gson</include>
                         </includes>
                     </artifactSet>
                     <relocations>
                         <relocation>
                             <pattern>com.google.common</pattern>
                             <shadedPattern>io.logz.com.google.common</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>com.bluejeans.common.bigqueue</pattern>
-                            <shadedPattern>io.logz.com.bluejeans.common.bigqueue</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>com.google.gson</pattern>
-                            <shadedPattern>io.logz.com.google.gson</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>
@@ -149,34 +140,28 @@
     </build>
     <dependencies>
         <dependency>
+            <groupId>io.logz.sender</groupId>
+            <artifactId>logzio-sender</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.1.7</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.bluejeans.common</groupId>
-            <artifactId>bigqueue</artifactId>
-            <version>1.7.0.4</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>19.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.6.2</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>3.4.1</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>io.logz.sender</groupId>
+            <artifactId>logzio-sender-test</artifactId>
+            <version>1.0.0</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -188,6 +173,11 @@
             <artifactId>jetty-server</artifactId>
             <version>9.3.9.M1</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>20.0</version>
         </dependency>
     </dependencies>
 </project>
