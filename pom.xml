@@ -6,7 +6,7 @@
 
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.13-SNAPSHOT</version>
+    <version>1.0.13</version>
 
     <packaging>jar</packaging>
     <name>Logz.io Logback Appender</name>
@@ -124,6 +124,8 @@
                         <relocation>
                             <pattern>com.google.common</pattern>
                             <shadedPattern>io.logz.com.google.common</shadedPattern>
+                            <pattern>com.google.common</pattern>
+                            <shadedPattern>io.logz.com.google.common</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>
@@ -142,13 +144,18 @@
         <dependency>
             <groupId>io.logz.sender</groupId>
             <artifactId>logzio-sender</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.1.7</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>20.0</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
@@ -159,7 +166,7 @@
         <dependency>
             <groupId>io.logz.sender</groupId>
             <artifactId>logzio-sender-test</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -173,11 +180,6 @@
             <artifactId>jetty-server</artifactId>
             <version>9.3.9.M1</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>20.0</version>
         </dependency>
     </dependencies>
 </project>
