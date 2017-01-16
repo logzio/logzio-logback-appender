@@ -14,11 +14,6 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
     <artifactId>logzio-logback-appender</artifactId>
     <version>1.0.13</version>
 </dependency>
-<dependency>
-    <groupId>io.logz.sender</groupId>
-    <artifactId>logzio-sender</artifactId>
-    <version>1.0.1</version>
-</dependency>
 ```
 
 ### Logback Example Configuration

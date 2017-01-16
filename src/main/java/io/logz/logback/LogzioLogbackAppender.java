@@ -4,9 +4,9 @@ import ch.qos.logback.classic.pattern.ThrowableProxyConverter;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import com.google.common.base.Splitter;
-import io.logz.com.google.gson.JsonObject;
 import io.logz.sender.LogzioSender;
-import io.logz.sender.LogzioStatusReporter;
+import io.logz.sender.SenderStatusReporter;
+import io.logz.sender.com.google.gson.JsonObject;
 import io.logz.sender.exceptions.LogzioParameterErrorException;
 
 import java.io.File;
@@ -17,13 +17,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
-
-    private LogzioSender logzioSender;
 
     private static final String TIMESTAMP = "@timestamp";
     private static final String LOGLEVEL = "loglevel";
@@ -35,10 +32,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
     private static final Set<String> reservedFields =  new HashSet<>(Arrays.asList(new String[] {TIMESTAMP,LOGLEVEL, MARKER, MESSAGE,LOGGER,THREAD,EXCEPTION}));
 
-
-    private final ThrowableProxyConverter throwableProxyConverter;
-    private final List<String> throwableProxyConversionOptions = Arrays.asList("full");
-
+    private LogzioSender logzioSender;
+    private ThrowableProxyConverter throwableProxyConverter;
     private Map<String, String> additionalFieldsMap = new HashMap<>();
 
     // User controlled variables
@@ -52,34 +47,21 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private int socketTimeout = 10 * 1000;
     private boolean debug = false;
     private boolean addHostname = false;
-    private String additionalFields;
     private int gcPersistedQueueFilesIntervalSeconds = 30;
 
-    public LogzioLogbackAppender(){
+    public LogzioLogbackAppender() {
         super();
-        throwableProxyConverter = new ThrowableProxyConverter();
-        throwableProxyConverter.setOptionList(throwableProxyConversionOptions);
-        throwableProxyConverter.start();
     }
 
     public void setToken(String logzioToken) {
         this.logzioToken = getValueFromSystemEnvironmentIfNeeded(logzioToken);
     }
 
-    public String getToken() {
-        return logzioToken;
-    }
-
     public void setLogzioType(String logzioType) {
         this.logzioType = logzioType;
     }
 
-    public String getLogzioType() {
-        return logzioType;
-    }
-
     public void setDrainTimeoutSec(int drainTimeoutSec) {
-
         // Basic protection from running negative or zero timeout
         if (drainTimeoutSec < 1) {
             this.drainTimeoutSec = 1;
@@ -89,44 +71,20 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         }
     }
 
-    public int getDrainTimeoutSec() {
-        return drainTimeoutSec;
-    }
-
     public void setFileSystemFullPercentThreshold(int fileSystemFullPercentThreshold) {
         this.fileSystemFullPercentThreshold = fileSystemFullPercentThreshold;
-    }
-
-    public int getFileSystemFullPercentThreshold() {
-        return fileSystemFullPercentThreshold;
     }
 
     public void setBufferDir(String bufferDir) {
         this.bufferDir = bufferDir;
     }
 
-    public String getBufferDir() {
-        return bufferDir;
-    }
-
     public void setLogzioUrl(String logzioUrl) {
         this.logzioUrl = getValueFromSystemEnvironmentIfNeeded(logzioUrl);
     }
 
-    public String getLogzioUrl() {
-        return logzioUrl;
-    }
-
-    public int getConnectTimeout() {
-        return connectTimeout;
-    }
-
     public void setConnectTimeout(int connectTimeout) {
         this.connectTimeout = connectTimeout;
-    }
-
-    public int getSocketTimeout() {
-        return socketTimeout;
     }
 
     public void setSocketTimeout(int socketTimeout) {
@@ -141,12 +99,21 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         this.debug = debug;
     }
 
-    public String getAdditionalFields() {
-        return additionalFields;
-    }
 
     public void setAdditionalFields(String additionalFields) {
-        this.additionalFields = additionalFields;
+       if (additionalFields != null) {
+           Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
+               if (reservedFields.contains(k)) {
+                   addWarn("The field name '" + k + "' defined in additionalFields configuration can't be used since it's a reserved field name. This field will not be added to the outgoing log messages");
+               } else {
+                   String value = getValueFromSystemEnvironmentIfNeeded(v);
+                   if (value != null) {
+                       additionalFieldsMap.put(k, value);
+                   }
+               }
+           });
+           addInfo("The additional fields that would be added: " + additionalFieldsMap.toString());
+       }
     }
 
     public boolean isAddHostname() {
@@ -161,10 +128,6 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         this.gcPersistedQueueFilesIntervalSeconds = gcPersistedQueueFilesIntervalSeconds;
     }
 
-    public int getGcPersistedQueueFilesIntervalSeconds() {
-        return gcPersistedQueueFilesIntervalSeconds;
-    }
-
     @Override
     public void start() {
         if (logzioToken == null) {
@@ -176,20 +139,6 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
                 addError("fileSystemFullPercentThreshold should be a number between 1 and 100, or -1");
                 return;
             }
-        }
-        if (additionalFields != null) {
-            Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
-                if (reservedFields.contains(k)) {
-                    addWarn("The field name '" + k + "' defined in additionalFields configuration can't be used since it's a reserved field name. This field will not be added to the outgoing log messages");
-                }
-                else {
-                    String value = getValueFromSystemEnvironmentIfNeeded(v);
-                    if (value != null) {
-                        additionalFieldsMap.put(k, value);
-                    }
-                }
-            });
-            addInfo("The additional fields that would be added: " + additionalFieldsMap.toString());
         }
         try {
             if (addHostname) {
@@ -216,10 +165,9 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         } else {
             bufferDir = System.getProperty("java.io.tmpdir") + File.separator+"logzio-logback-buffer"+File.separator + logzioType;
         }
-        File bufferDirFile = new File(bufferDir+File.separator+"logzio-logback-appender");
-
+        File bufferDirFile = new File(bufferDir,"logzio-logback-appender");
         try {
-            LogzioStatusReporter reporter = new StatusReporter();
+            SenderStatusReporter reporter = new StatusReporter();
             logzioSender = LogzioSender.getOrCreateSenderByType(logzioToken, logzioType, drainTimeoutSec, fileSystemFullPercentThreshold,
                     bufferDirFile, logzioUrl, socketTimeout, connectTimeout, debug,
                     reporter, context.getScheduledExecutorService(), gcPersistedQueueFilesIntervalSeconds);
@@ -232,23 +180,27 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             addError("Exception: " + e.getMessage(), e);
             return;
         }
+        throwableProxyConverter = new ThrowableProxyConverter();
+        throwableProxyConverter.setOptionList(Arrays.asList("full"));
+        throwableProxyConverter.start();
         super.start();
     }
 
     @Override
     public void stop() {
         if (logzioSender != null) logzioSender.stop();
+        if ( throwableProxyConverter != null ) throwableProxyConverter.stop();
         super.stop();
     }
 
-    String getValueFromSystemEnvironmentIfNeeded(String value) {
+    private String getValueFromSystemEnvironmentIfNeeded(String value) {
         if (value.startsWith("$")) {
             return System.getenv(value.replace("$", ""));
         }
         return value;
     }
 
-    protected JsonObject formatMessageAsJson(ILoggingEvent loggingEvent) {
+    private JsonObject formatMessageAsJson(ILoggingEvent loggingEvent) {
         JsonObject logMessage = new JsonObject();
 
         // Adding MDC first, as I dont want it to collide with any one of the following fields
@@ -285,7 +237,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         }
     }
 
-    class StatusReporter implements LogzioStatusReporter {
+    private class StatusReporter implements SenderStatusReporter {
 
         @Override
         public void error(String msg) {

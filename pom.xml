@@ -35,6 +35,10 @@
         <url>https://github.com/logzio/logzio-logback-appender</url>
     </scm>
 
+    <properties>
+        <logzio-sender-version>1.0.3</logzio-sender-version>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -123,9 +127,7 @@
                     <relocations>
                         <relocation>
                             <pattern>com.google.common</pattern>
-                            <shadedPattern>io.logz.com.google.common</shadedPattern>
-                            <pattern>com.google.common</pattern>
-                            <shadedPattern>io.logz.com.google.common</shadedPattern>
+                            <shadedPattern>io.logz.logback.com.google.common</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>
@@ -144,7 +146,7 @@
         <dependency>
             <groupId>io.logz.sender</groupId>
             <artifactId>logzio-sender</artifactId>
-            <version>1.0.1</version>
+            <version>${logzio-sender-version}</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -166,7 +168,7 @@
         <dependency>
             <groupId>io.logz.sender</groupId>
             <artifactId>logzio-sender-test</artifactId>
-            <version>1.0.1</version>
+            <version>${logzio-sender-version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
