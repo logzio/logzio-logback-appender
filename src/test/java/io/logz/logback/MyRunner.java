@@ -1,4 +1,4 @@
-package io.logz;
+package io.logz.logback;
 
 import java.util.concurrent.CountDownLatch;
 
