@@ -232,7 +232,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
     @Override
     protected void append(ILoggingEvent loggingEvent) {
-        if (!loggingEvent.getLoggerName().contains("io.logz.com.bluejeans.common.bigqueue")) {
+        if (!loggingEvent.getLoggerName().contains("io.logz.sender")) {
             logzioSender.send(formatMessageAsJson(loggingEvent));
         }
     }
