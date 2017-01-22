@@ -10,7 +10,6 @@ import io.logz.sender.com.google.gson.JsonObject;
 import io.logz.sender.exceptions.LogzioParameterErrorException;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -42,7 +41,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private int drainTimeoutSec = 5;
     private int fileSystemFullPercentThreshold = 98;
     private String bufferDir;
-    private String logzioUrl = "https://listener.logz.io:8071";
+    private String logzioUrl;
     private int connectTimeout = 10 * 1000;
     private int socketTimeout = 10 * 1000;
     private boolean debug = false;
@@ -172,12 +171,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
                     bufferDirFile, logzioUrl, socketTimeout, connectTimeout, debug,
                     reporter, context.getScheduledExecutorService(), gcPersistedQueueFilesIntervalSeconds);
             logzioSender.start();
-        } catch(IOException e) {
-            addError("Can't start Logzio data sender. Problem to create buffer directory: ",e);
-            return;
         } catch (LogzioParameterErrorException e) {
-            addError("Some of the configuration parameters of logz.io is wrong: "+e.getMessage());
-            addError("Exception: " + e.getMessage(), e);
+            addError("Some of the configuration parameters of logz.io is wrong: "+e.getMessage(), e);
             return;
         }
         throwableProxyConverter = new ThrowableProxyConverter();
@@ -194,7 +189,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     }
 
     private String getValueFromSystemEnvironmentIfNeeded(String value) {
-        if (value.startsWith("$")) {
+        if (value != null && value.startsWith("$")) {
             return System.getenv(value.replace("$", ""));
         }
         return value;
