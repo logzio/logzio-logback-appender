@@ -36,7 +36,7 @@
     </scm>
 
     <properties>
-        <logzio-sender-version>1.0.3</logzio-sender-version>
+        <logzio-sender-version>1.0.4</logzio-sender-version>
     </properties>
 
     <build>
@@ -124,6 +124,7 @@
                             <include>com.google.guava:guava</include>
                         </includes>
                     </artifactSet>
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
                     <relocations>
                         <relocation>
                             <pattern>com.google.common</pattern>
