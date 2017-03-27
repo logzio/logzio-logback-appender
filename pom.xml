@@ -6,7 +6,7 @@
 
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.14</version>
+    <version>1.0.15</version>
 
     <packaging>jar</packaging>
     <name>Logz.io Logback Appender</name>
@@ -36,7 +36,7 @@
     </scm>
 
     <properties>
-        <logzio-sender-version>1.0.5</logzio-sender-version>
+        <logzio-sender-version>1.0.6</logzio-sender-version>
     </properties>
 
     <build>
