@@ -12,7 +12,7 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.15</version>
+    <version>1.0.16</version>
 </dependency>
 ```
 
@@ -118,7 +118,7 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
- - 1.0.15
+ - 1.0.15 - 1.0.16
    - add error message about reason of 400(BAD REQUEST)
  - 1.0.1 - 1.0.14
    - Separate LogzioSender to independent project, add dependency on logzio-sender 
