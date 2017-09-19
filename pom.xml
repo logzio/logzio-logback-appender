@@ -6,7 +6,7 @@
 
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.16</version>
+    <version>1.0.17</version>
 
     <packaging>jar</packaging>
     <name>Logz.io Logback Appender</name>
@@ -152,7 +152,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.1.7</version>
+            <version>1.2.3</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

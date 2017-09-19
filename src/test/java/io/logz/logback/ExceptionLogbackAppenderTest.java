@@ -41,7 +41,7 @@ public class ExceptionLogbackAppenderTest extends BaseLogbackAppenderTest {
                 "\tat io.logz.logback.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:31)\n" +
                 "\t... 2 common frames omitted\n";
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
 
         testLogger.info(message1, exceptionGenerator.getE());
         sleepSeconds(drainTimeout * 2);

@@ -32,7 +32,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String message1 = "Testing.." + random(5);
         String message2 = "Warning test.." + random(5);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
         testLogger.info(message1);
         testLogger.warn(message2);
 
@@ -55,7 +55,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         additionalFields.put("java_home", System.getenv("JAVA_HOME"));
         additionalFields.put("testing", "yes");
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, additionalFieldsString);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, additionalFieldsString);
         testLogger.info(message1);
 
         sleepSeconds(2 * drainTimeout);
@@ -74,7 +74,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         int drainTimeout = 1;
         String message1 = "Hostname log - " +  random(5);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, true, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, true, false, null);
         testLogger.info(message1);
 
         // Sleep double time the drain timeout
@@ -88,6 +88,27 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         assertThat(logRequest.getHost()).isEqualTo(hostname);
     }
 
+    @Test
+    public void existingLine() throws Exception {
+        String token = "checkingLine";
+        String type = "withLineType";
+        String loggerName = "test";
+        int drainTimeout = 1;
+        String message1 = "Hostname log - " +  random(5);
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, true, null);
+        testLogger.info(message1);
+
+        // Sleep double time the drain timeout
+        sleepSeconds(2 * drainTimeout);
+
+        mockListener.assertNumberOfReceivedMsgs(1);
+        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
+        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
+        assertThat(logRequest.getStringFieldOrNull("line")).isNotNull();
+    }
+
+
     @SuppressWarnings("ConstantConditions")
     @Test
     public void sendException() throws Exception {
@@ -98,7 +119,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         Throwable exception = null;
         String message1 = "This is not an int..";
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
 
         try {
             Integer.parseInt(message1);
@@ -135,7 +156,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         mdcKv.put("logger", "Doesn't matter");
         MDC.put(mdcKey, mdcValue);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
         testLogger.info(message1);
 
         sleepSeconds(2 * drainTimeout);
@@ -158,7 +179,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
         Marker marker = MarkerFactory.getMarker(markerTestValue);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
         testLogger.info(marker, message1);
 
         sleepSeconds(2 * drainTimeout);
@@ -180,7 +201,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String message1 = "Before Reset Line - "+random(5);
         String message2 = "After Reset Line - "+random(5);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
 
         testLogger.info(message1);
         sleepSeconds(2 * drainTimeout);
@@ -195,7 +216,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         loggerContext.reset();
 
         // We need to add the appender again
-        testLogger = createLogger(token, type, loggerName, drainTimeout, false, null);
+        testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
 
         testLogger.warn(message2);
         sleepSeconds(2 * drainTimeout);
@@ -213,7 +234,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         int drainTimeout = 1;
 
         String message1 = "Just a log - " + random(5);
-        Logger testLogger = createLogger("$JAVA_HOME", type, loggerName, drainTimeout, false, null);
+        Logger testLogger = createLogger("$JAVA_HOME", type, loggerName, drainTimeout, false, false, null);
 
         testLogger.info(message1);
 
