@@ -12,13 +12,14 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.16</version>
+    <version>1.0.17</version>
 </dependency>
 ```
 
 ### Logback Example Configuration
 ```xml
 <!-- Use debug=true here if you want to see output from the appender itself -->
+<!-- Use line=true here if you want to see the line of code that generated this log -->
 <configuration>
     <!-- Use shutdownHook so that we can close gracefully and finish the log drain -->
     <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
@@ -45,6 +46,7 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 | **addHostname**       | *false*                                    | Optional. If true, then a field named 'hostname' will be added holding the host name of the machine. If from some reason there's no defined hostname, this field won't be added |
 | **additionalFields**       | *None*                                    | Optional. Allows to add additional fields to the JSON message sent. The format is "fieldName1=fieldValue1;fieldName2=fieldValue2". You can optionally inject an environment variable value using the following format: "fieldName1=fieldValue1;fieldName2=$ENV_VAR_NAME". In that case, the environment variable should be the only value. In case the environment variable can't be resolved, the field will be omitted. |
 | **debug**       | *false*                                    | Print some debug messages to stdout to help to diagnose issues |
+| **line**       | *false*                                    | Print the line of code that generated this log  |
 
 
 ### Code Example
@@ -118,6 +120,8 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.16 - 1.0.17
+   - added `line` parameter to enable printing the line of code that generated this log
  - 1.0.15 - 1.0.16
    - add error message about reason of 400(BAD REQUEST)
  - 1.0.1 - 1.0.14
