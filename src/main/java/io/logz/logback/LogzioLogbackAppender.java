@@ -1,5 +1,6 @@
 package io.logz.logback;
 
+import ch.qos.logback.classic.pattern.LineOfCallerConverter;
 import ch.qos.logback.classic.pattern.ThrowableProxyConverter;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
@@ -26,6 +27,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private static final String MARKER = "marker";
     private static final String MESSAGE = "message";
     private static final String LOGGER = "logger";
+    private static final String LINE = "line";
     private static final String THREAD = "thread";
     private static final String EXCEPTION = "exception";
 
@@ -33,6 +35,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
     private LogzioSender logzioSender;
     private ThrowableProxyConverter throwableProxyConverter;
+    private LineOfCallerConverter lineOfCallerConverter;
     private Map<String, String> additionalFieldsMap = new HashMap<>();
 
     // User controlled variables
@@ -46,6 +49,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private int socketTimeout = 10 * 1000;
     private boolean debug = false;
     private boolean addHostname = false;
+    private boolean line = false;
     private int gcPersistedQueueFilesIntervalSeconds = 30;
 
     public LogzioLogbackAppender() {
@@ -123,6 +127,14 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         this.addHostname = addHostname;
     }
 
+    public boolean isLine() {
+        return line;
+    }
+
+    public void setLine(boolean line) {
+        this.line = line;
+    }
+
     public void setGcPersistedQueueFilesIntervalSeconds(int gcPersistedQueueFilesIntervalSeconds) {
         this.gcPersistedQueueFilesIntervalSeconds = gcPersistedQueueFilesIntervalSeconds;
     }
@@ -176,6 +188,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             return;
         }
         throwableProxyConverter = new ThrowableProxyConverter();
+        lineOfCallerConverter = new LineOfCallerConverter();
         throwableProxyConverter.setOptionList(Arrays.asList("full"));
         throwableProxyConverter.start();
         super.start();
@@ -213,6 +226,9 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
         logMessage.addProperty(LOGGER, loggingEvent.getLoggerName());
         logMessage.addProperty(THREAD, loggingEvent.getThreadName());
+        if (line) {
+            logMessage.addProperty(LINE, lineOfCallerConverter.convert(loggingEvent));
+        }
 
         if (loggingEvent.getThrowableProxy() != null) {
             logMessage.addProperty(EXCEPTION, throwableProxyConverter.convert(loggingEvent));

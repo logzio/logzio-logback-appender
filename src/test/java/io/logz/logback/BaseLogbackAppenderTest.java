@@ -31,10 +31,10 @@ public class BaseLogbackAppenderTest {
     }
 
     protected Logger createLogger(String token, String type, String loggerName, Integer drainTimeout,
-                                  boolean addHostname, String additionalFields) {
+                                  boolean addHostname,boolean line, String additionalFields) {
 
-        logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, addHostname={}, additionalFields={}",
-                loggerName, token, type, drainTimeout, addHostname, additionalFields);
+        logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, addHostname={}, line={}, additionalFields={} ",
+                loggerName, token, type, drainTimeout, addHostname, line, additionalFields);
 
         ch.qos.logback.classic.Logger logbackLogger =  (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(loggerName);
         Context logbackContext = logbackLogger.getLoggerContext();
@@ -43,6 +43,7 @@ public class BaseLogbackAppenderTest {
         logzioLogbackAppender.setToken(token);
         logzioLogbackAppender.setLogzioType(type);
         logzioLogbackAppender.setDebug(true);
+        logzioLogbackAppender.setLine(line);
         logzioLogbackAppender.setLogzioUrl("http://" + mockListener.getHost() + ":" + mockListener.getPort());
         logzioLogbackAppender.setAddHostname(addHostname);
         if (drainTimeout != null) {
