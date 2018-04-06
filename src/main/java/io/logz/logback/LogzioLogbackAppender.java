@@ -203,7 +203,14 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
     private String getValueFromSystemEnvironmentIfNeeded(String value) {
         if (value != null && value.startsWith("$")) {
-            return System.getenv(value.replace("$", ""));
+            String variableName = value.replace("$", "");
+            String envVariable = System.getenv(variableName);
+
+            if(envVariable == null || envVariable.isEmpty()) {
+                envVariable = System.getProperty(variableName);
+            }
+
+            return envVariable;
         }
         return value;
     }
