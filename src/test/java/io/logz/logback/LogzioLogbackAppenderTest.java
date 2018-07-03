@@ -42,6 +42,26 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         mockListener.assertLogReceivedIs(message1, token, type, loggerName, Level.INFO.levelStr);
         mockListener.assertLogReceivedIs(message2, token, type, loggerName, Level.WARN.levelStr);
     }
+
+    @Test
+    public void simpleGzipAppending() throws Exception {
+        String token = "aBcDeFgHiJkLmNoPqRsTGzIp";
+        String type = "awesomeGzipType";
+        String loggerName = "simpleGzipAppending";
+        int drainTimeout = 1;
+        String message1 = "Testing.." + random(5);
+        String message2 = "Warning test.." + random(5);
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null, true);
+        testLogger.info(message1);
+        testLogger.warn(message2);
+
+        sleepSeconds(drainTimeout * 2);
+
+        mockListener.assertNumberOfReceivedMsgs(2);
+        mockListener.assertLogReceivedIs(message1, token, type, loggerName, Level.INFO.levelStr);
+        mockListener.assertLogReceivedIs(message2, token, type, loggerName, Level.WARN.levelStr);
+    }
     
     @Test
     public void validateAdditionalFields() throws Exception {

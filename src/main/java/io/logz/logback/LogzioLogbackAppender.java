@@ -50,6 +50,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private boolean debug = false;
     private boolean addHostname = false;
     private boolean line = false;
+    private boolean compressRequests = false;
     private int gcPersistedQueueFilesIntervalSeconds = 30;
 
     public LogzioLogbackAppender() {
@@ -101,6 +102,10 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
+
+    public boolean isCompressRequests() { return compressRequests; }
+
+    public void setCompressRequests(boolean compressRequests) { this.compressRequests = compressRequests; }
 
 
     public void setAdditionalFields(String additionalFields) {
@@ -181,7 +186,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             SenderStatusReporter reporter = new StatusReporter();
             logzioSender = LogzioSender.getOrCreateSenderByType(logzioToken, logzioType, drainTimeoutSec, fileSystemFullPercentThreshold,
                     bufferDirFile, logzioUrl, socketTimeout, connectTimeout, debug,
-                    reporter, context.getScheduledExecutorService(), gcPersistedQueueFilesIntervalSeconds);
+                    reporter, context.getScheduledExecutorService(), gcPersistedQueueFilesIntervalSeconds, compressRequests);
             logzioSender.start();
         } catch (LogzioParameterErrorException e) {
             addError("Some of the configuration parameters of logz.io is wrong: "+e.getMessage(), e);
