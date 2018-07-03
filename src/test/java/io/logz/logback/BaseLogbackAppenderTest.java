@@ -31,7 +31,7 @@ public class BaseLogbackAppenderTest {
     }
 
     protected Logger createLogger(String token, String type, String loggerName, Integer drainTimeout,
-                                  boolean addHostname,boolean line, String additionalFields) {
+                                  boolean addHostname,boolean line, String additionalFields, boolean compressRequests) {
 
         logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, addHostname={}, line={}, additionalFields={} ",
                 loggerName, token, type, drainTimeout, addHostname, line, additionalFields);
@@ -46,6 +46,7 @@ public class BaseLogbackAppenderTest {
         logzioLogbackAppender.setLine(line);
         logzioLogbackAppender.setLogzioUrl("http://" + mockListener.getHost() + ":" + mockListener.getPort());
         logzioLogbackAppender.setAddHostname(addHostname);
+        logzioLogbackAppender.setCompressRequests(compressRequests);
         if (drainTimeout != null) {
             logzioLogbackAppender.setDrainTimeoutSec(drainTimeout);
         }
@@ -57,6 +58,11 @@ public class BaseLogbackAppenderTest {
         logbackLogger.addAppender(logzioLogbackAppender);
         logbackLogger.setAdditive(false);
         return logbackLogger;
+    }
+
+    protected Logger createLogger(String token, String type, String loggerName, Integer drainTimeout,
+                                  boolean addHostname,boolean line, String additionalFields) {
+        return createLogger(token, type, loggerName, drainTimeout, addHostname, line, additionalFields, false);
     }
 
     protected void sleepSeconds(int seconds) {
