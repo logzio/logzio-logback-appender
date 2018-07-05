@@ -214,7 +214,6 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
           if(envVariable == null || envVariable.isEmpty()) {
             envVariable = System.getProperty(variableName);
           }
-
           return envVariable;
         }
         return value;
