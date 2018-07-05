@@ -87,9 +87,6 @@
                         <goals>
                             <goal>sign</goal>
                         </goals>
-                        <configuration>
-                            <keyname>marina@logz.io</keyname>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
