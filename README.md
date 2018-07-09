@@ -50,7 +50,7 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 | **debug**       | *false*                                    | Print some debug messages to stdout to help to diagnose issues |
 | **line**       | *false*                                    | Print the line of code that generated this log  |
 | **compressRequests**       | *false*                                    | Boolean. `true` if logs are compressed in gzip format before sending. `false` if logs are sent uncompressed. |
-
+| **additionalFields**       | *None*                                    | String. List of key=value additional fields separated by ';'. For example: k1=v1;k2=v2. |
 
 ### Code Example
 ```java
@@ -125,6 +125,7 @@ Will send a log to Logz.io that looks like this:
 ### Release notes
  - 1.0.18
    - added `compressRequests` parameter to enable gzip compression of the logs before they are sent.
+   - allow to use system properties (if env variable does not exist ) in additionalFields , logzioUrl and token.
  - 1.0.16 - 1.0.17
    - added `line` parameter to enable printing the line of code that generated this log
  - 1.0.15 - 1.0.16
