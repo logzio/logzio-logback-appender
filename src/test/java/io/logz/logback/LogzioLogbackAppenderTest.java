@@ -48,7 +48,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String token = "aBcDeFgHiJkLmNoPqRsTGzIp";
         String type = "awesomeGzipType";
         String loggerName = "simpleGzipAppending";
-        int drainTimeout = 1;
+        int drainTimeout = 5;
         String message1 = "Testing.." + random(5);
         String message2 = "Warning test.." + random(5);
 

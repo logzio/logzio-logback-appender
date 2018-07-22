@@ -7,7 +7,10 @@ import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import com.google.common.base.Splitter;
 import io.logz.sender.LogzioSender;
 import io.logz.sender.SenderStatusReporter;
+import io.logz.sender.com.google.gson.Gson;
+import io.logz.sender.com.google.gson.JsonElement;
 import io.logz.sender.com.google.gson.JsonObject;
+import io.logz.sender.com.google.gson.JsonSyntaxException;
 import io.logz.sender.exceptions.LogzioParameterErrorException;
 
 import java.io.File;
@@ -21,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
-
+    private static final Gson gson = new Gson();
     private static final String TIMESTAMP = "@timestamp";
     private static final String LOGLEVEL = "loglevel";
     private static final String MARKER = "marker";
@@ -220,7 +223,16 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     }
 
     private JsonObject formatMessageAsJson(ILoggingEvent loggingEvent) {
-        JsonObject logMessage = new JsonObject();
+        JsonObject logMessage;
+
+        try {
+            JsonElement jsonElement = gson.fromJson(loggingEvent.getFormattedMessage(), JsonElement.class);
+
+            logMessage = jsonElement.getAsJsonObject();
+        } catch (JsonSyntaxException | IllegalStateException e) {
+            logMessage = new JsonObject();
+            logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
+        }
 
         // Adding MDC first, as I dont want it to collide with any one of the following fields
         if (loggingEvent.getMDCPropertyMap() != null) {
@@ -234,7 +246,6 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             logMessage.addProperty(MARKER, loggingEvent.getMarker().toString());
         }
 
-        logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
         logMessage.addProperty(LOGGER, loggingEvent.getLoggerName());
         logMessage.addProperty(THREAD, loggingEvent.getThreadName());
         if (line) {
