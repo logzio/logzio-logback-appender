@@ -229,7 +229,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             JsonElement jsonElement = gson.fromJson(loggingEvent.getFormattedMessage(), JsonElement.class);
 
             logMessage = jsonElement.getAsJsonObject();
-        } catch (JsonSyntaxException | IllegalStateException e) {
+        } catch (Exception e) {
             logMessage = new JsonObject();
             logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
         }
