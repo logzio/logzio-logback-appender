@@ -25,6 +25,34 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     private final static Logger logger = LoggerFactory.getLogger(LogzioLogbackAppenderTest.class);
 
     @Test
+    public void validateJsonMessage(){
+        String token = "validatingAdditionalFields";
+        String type = "willTryWithOrWithoutEnvironmentVariables";
+        String loggerName = "additionalLogger";
+        int drainTimeout = 1;
+        String messageText = "message test";
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("message", messageText);
+        map.put("userName", "test");
+        map.put("email", "test@email.com");
+
+        String message1 = new Gson().toJson(map);
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
+        testLogger.info(message1);
+
+        sleepSeconds(2 * drainTimeout);
+
+        mockListener.assertNumberOfReceivedMsgs(1);
+        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(messageText);
+        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
+
+        assertThat(logRequest.getStringFieldOrNull("userName")).isNotNull().isEqualTo("test");
+        assertThat(logRequest.getStringFieldOrNull("email")).isNotNull().isEqualTo("test@email.com");
+    }
+
+    @Test
     public void simpleAppending() throws Exception {
         String token = "aBcDeFgHiJkLmNoPqRsT";
         String type = "awesomeType";
@@ -264,34 +292,6 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         mockListener.assertNumberOfReceivedMsgs(1);
         MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
-    }
-
-    @Test
-    public void validateJsonMessage(){
-        String token = "validatingAdditionalFields";
-        String type = "willTryWithOrWithoutEnvironmentVariables";
-        String loggerName = "additionalLogger";
-        int drainTimeout = 1;
-        String messageText = "message test";
-
-        Map<String, Object> map = new HashMap<>();
-        map.put("message", messageText);
-        map.put("userName", "test");
-        map.put("email", "test@email.com");
-
-        String message1 = new Gson().toJson(map);
-
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
-        testLogger.info(message1);
-
-        sleepSeconds(2 * drainTimeout);
-
-        mockListener.assertNumberOfReceivedMsgs(1);
-        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(messageText);
-        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
-
-        assertThat(logRequest.getStringFieldOrNull("userName")).isNotNull().isEqualTo("test");
-        assertThat(logRequest.getStringFieldOrNull("email")).isNotNull().isEqualTo("test@email.com");
     }
 
     public void assertAdditionalFields(MockLogzioBulkListener.LogRequest logRequest, Map<String, String> additionalFields) {
