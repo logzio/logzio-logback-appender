@@ -3,6 +3,7 @@ package io.logz.logback;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import io.logz.sender.com.google.gson.Gson;
 import io.logz.test.MockLogzioBulkListener;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -48,7 +49,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String token = "aBcDeFgHiJkLmNoPqRsTGzIp";
         String type = "awesomeGzipType";
         String loggerName = "simpleGzipAppending";
-        int drainTimeout = 5;
+        int drainTimeout = 1;
         String message1 = "Testing.." + random(5);
         String message2 = "Warning test.." + random(5);
 
@@ -265,6 +266,33 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
     }
 
+    @Test
+    public void validateJsonMessage(){
+        String token = "validatingAdditionalFields";
+        String type = "willTryWithOrWithoutEnvironmentVariables";
+        String loggerName = "additionalLogger";
+        int drainTimeout = 1;
+        String messageText = "message test";
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("message", messageText);
+        map.put("userName", "test");
+        map.put("email", "test@email.com");
+
+        String message1 = new Gson().toJson(map);
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
+        testLogger.info(message1);
+
+        sleepSeconds(2 * drainTimeout);
+
+        mockListener.assertNumberOfReceivedMsgs(1);
+        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(messageText);
+        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
+
+        assertThat(logRequest.getStringFieldOrNull("userName")).isNotNull().isEqualTo("test");
+        assertThat(logRequest.getStringFieldOrNull("email")).isNotNull().isEqualTo("test@email.com");
+    }
 
     public void assertAdditionalFields(MockLogzioBulkListener.LogRequest logRequest, Map<String, String> additionalFields) {
         additionalFields.forEach((field, value) -> {
