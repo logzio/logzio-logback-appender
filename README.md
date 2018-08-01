@@ -50,7 +50,7 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 | **debug**       | *false*                                    | Print some debug messages to stdout to help to diagnose issues |
 | **line**       | *false*                                    | Print the line of code that generated this log  |
 | **compressRequests**       | *false*                                    | Boolean. `true` if logs are compressed in gzip format before sending. `false` if logs are sent uncompressed. |
-
+| **format** | *text*  | Optional. `json` if the logged message is to be parsed as a JSON (in such a way that each JSON node will be a field in logz.io) or `text` if the logged message is to be treated as plain text.
 
 ### Code Example
 ```java

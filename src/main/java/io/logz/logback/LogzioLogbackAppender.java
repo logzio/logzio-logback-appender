@@ -18,6 +18,7 @@ import java.net.UnknownHostException;
 import java.util.*;
 
 public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
+
     private static final Gson gson = new Gson();
     private static final String TIMESTAMP = "@timestamp";
     private static final String LOGLEVEL = "loglevel";
@@ -27,6 +28,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private static final String LINE = "line";
     private static final String THREAD = "thread";
     private static final String EXCEPTION = "exception";
+    private static final String FORMAT_TEXT = "text";
+    private static final String FORMAT_JSON = "json";
 
     private static final Set<String> reservedFields =  new HashSet<>(Arrays.asList(new String[] {TIMESTAMP,LOGLEVEL, MARKER, MESSAGE,LOGGER,THREAD,EXCEPTION}));
 
@@ -49,9 +52,18 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private boolean line = false;
     private boolean compressRequests = false;
     private int gcPersistedQueueFilesIntervalSeconds = 30;
+    private String format = FORMAT_TEXT;
 
     public LogzioLogbackAppender() {
         super();
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
     }
 
     public void setToken(String logzioToken) {
@@ -219,10 +231,15 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private JsonObject formatMessageAsJson(ILoggingEvent loggingEvent) {
         JsonObject logMessage;
 
-        try {
-            JsonElement jsonElement = gson.fromJson(loggingEvent.getFormattedMessage(), JsonElement.class);
-            logMessage = jsonElement.getAsJsonObject();
-        } catch (Exception e) {
+        if (format.equals(FORMAT_JSON)) {
+            try {
+                JsonElement jsonElement = gson.fromJson(loggingEvent.getFormattedMessage(), JsonElement.class);
+                logMessage = jsonElement.getAsJsonObject();
+            } catch (Exception e) {
+                logMessage = new JsonObject();
+                logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
+            }
+        } else {
             logMessage = new JsonObject();
             logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
         }

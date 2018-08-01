@@ -6,11 +6,7 @@ import ch.qos.logback.classic.LoggerContext;
 import io.logz.sender.com.google.gson.Gson;
 import io.logz.test.MockLogzioBulkListener;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
+import org.slf4j.*;
 
 import java.net.InetAddress;
 import java.util.HashMap;
@@ -40,6 +36,9 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String message1 = new Gson().toJson(map);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
+        LogzioLogbackAppender logzioLogbackAppender =
+                (LogzioLogbackAppender)((ch.qos.logback.classic.Logger)testLogger).getAppender("LogzioLogbackAppender");
+        logzioLogbackAppender.setFormat("json");
         testLogger.info(message1);
 
         sleepSeconds(2 * drainTimeout);

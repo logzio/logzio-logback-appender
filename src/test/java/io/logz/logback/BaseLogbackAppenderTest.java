@@ -6,6 +6,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,6 +48,7 @@ public class BaseLogbackAppenderTest {
         logzioLogbackAppender.setLogzioUrl("http://" + mockListener.getHost() + ":" + mockListener.getPort());
         logzioLogbackAppender.setAddHostname(addHostname);
         logzioLogbackAppender.setCompressRequests(compressRequests);
+        logzioLogbackAppender.setName("LogzioLogbackAppender");
         if (drainTimeout != null) {
             logzioLogbackAppender.setDrainTimeoutSec(drainTimeout);
         }
