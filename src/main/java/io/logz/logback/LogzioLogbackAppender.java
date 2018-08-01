@@ -15,7 +15,12 @@ import io.logz.sender.exceptions.LogzioParameterErrorException;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
