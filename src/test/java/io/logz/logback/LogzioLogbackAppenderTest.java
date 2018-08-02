@@ -3,13 +3,10 @@ package io.logz.logback;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import io.logz.sender.com.google.gson.Gson;
 import io.logz.test.MockLogzioBulkListener;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
+import org.slf4j.*;
 
 import java.net.InetAddress;
 import java.util.HashMap;
@@ -22,6 +19,37 @@ import static org.assertj.core.api.Assertions.fail;
 public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
     private final static Logger logger = LoggerFactory.getLogger(LogzioLogbackAppenderTest.class);
+
+    @Test
+    public void validateJsonMessage(){
+        String token = "validatingAdditionalFields";
+        String type = "willTryWithOrWithoutEnvironmentVariables";
+        String loggerName = "additionalLogger";
+        int drainTimeout = 1;
+        String messageText = "message test";
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("message", messageText);
+        map.put("userName", "test");
+        map.put("email", "test@email.com");
+
+        String message1 = new Gson().toJson(map);
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
+        LogzioLogbackAppender logzioLogbackAppender =
+                (LogzioLogbackAppender)((ch.qos.logback.classic.Logger)testLogger).getAppender("LogzioLogbackAppender");
+        logzioLogbackAppender.setFormat("json");
+        testLogger.info(message1);
+
+        sleepSeconds(2 * drainTimeout);
+
+        mockListener.assertNumberOfReceivedMsgs(1);
+        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(messageText);
+        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
+
+        assertThat(logRequest.getStringFieldOrNull("userName")).isNotNull().isEqualTo("test");
+        assertThat(logRequest.getStringFieldOrNull("email")).isNotNull().isEqualTo("test@email.com");
+    }
 
     @Test
     public void simpleAppending() throws Exception {
@@ -264,7 +292,6 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
     }
-
 
     public void assertAdditionalFields(MockLogzioBulkListener.LogRequest logRequest, Map<String, String> additionalFields) {
         additionalFields.forEach((field, value) -> {

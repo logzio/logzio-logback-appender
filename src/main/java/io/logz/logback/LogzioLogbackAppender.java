@@ -7,6 +7,8 @@ import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import com.google.common.base.Splitter;
 import io.logz.sender.LogzioSender;
 import io.logz.sender.SenderStatusReporter;
+import io.logz.sender.com.google.gson.Gson;
+import io.logz.sender.com.google.gson.JsonElement;
 import io.logz.sender.com.google.gson.JsonObject;
 import io.logz.sender.exceptions.LogzioParameterErrorException;
 
@@ -22,6 +24,7 @@ import java.util.Set;
 
 public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
+    private static final Gson gson = new Gson();
     private static final String TIMESTAMP = "@timestamp";
     private static final String LOGLEVEL = "loglevel";
     private static final String MARKER = "marker";
@@ -30,6 +33,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private static final String LINE = "line";
     private static final String THREAD = "thread";
     private static final String EXCEPTION = "exception";
+    private static final String FORMAT_TEXT = "text";
+    private static final String FORMAT_JSON = "json";
 
     private static final Set<String> reservedFields =  new HashSet<>(Arrays.asList(new String[] {TIMESTAMP,LOGLEVEL, MARKER, MESSAGE,LOGGER,THREAD,EXCEPTION}));
 
@@ -52,9 +57,18 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private boolean line = false;
     private boolean compressRequests = false;
     private int gcPersistedQueueFilesIntervalSeconds = 30;
+    private String format = FORMAT_TEXT;
 
     public LogzioLogbackAppender() {
         super();
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
     }
 
     public void setToken(String logzioToken) {
@@ -220,7 +234,20 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     }
 
     private JsonObject formatMessageAsJson(ILoggingEvent loggingEvent) {
-        JsonObject logMessage = new JsonObject();
+        JsonObject logMessage;
+
+        if (format.equals(FORMAT_JSON)) {
+            try {
+                JsonElement jsonElement = gson.fromJson(loggingEvent.getFormattedMessage(), JsonElement.class);
+                logMessage = jsonElement.getAsJsonObject();
+            } catch (Exception e) {
+                logMessage = new JsonObject();
+                logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
+            }
+        } else {
+            logMessage = new JsonObject();
+            logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
+        }
 
         // Adding MDC first, as I dont want it to collide with any one of the following fields
         if (loggingEvent.getMDCPropertyMap() != null) {
@@ -234,7 +261,6 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             logMessage.addProperty(MARKER, loggingEvent.getMarker().toString());
         }
 
-        logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
         logMessage.addProperty(LOGGER, loggingEvent.getLoggerName());
         logMessage.addProperty(THREAD, loggingEvent.getThreadName());
         if (line) {
