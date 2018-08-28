@@ -6,7 +6,11 @@ import ch.qos.logback.classic.LoggerContext;
 import io.logz.sender.com.google.gson.Gson;
 import io.logz.test.MockLogzioBulkListener;
 import org.junit.Test;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.net.InetAddress;
 import java.util.HashMap;
@@ -52,7 +56,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void simpleAppending() throws Exception {
+    public void simpleAppending() {
         String token = "aBcDeFgHiJkLmNoPqRsT";
         String type = "awesomeType";
         String loggerName = "simpleAppending";
@@ -72,7 +76,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void simpleGzipAppending() throws Exception {
+    public void simpleGzipAppending() {
         String token = "aBcDeFgHiJkLmNoPqRsTGzIp";
         String type = "awesomeGzipType";
         String loggerName = "simpleGzipAppending";
@@ -92,7 +96,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
     
     @Test
-    public void validateAdditionalFields() throws Exception {
+    public void validateAdditionalFields() {
         String token = "validatingAdditionalFields";
         String type = "willTryWithOrWithoutEnvironmentVariables";
         String loggerName = "additionalLogger";
@@ -137,7 +141,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void existingLine() throws Exception {
+    public void existingLine() {
         String token = "checkingLine";
         String type = "withLineType";
         String loggerName = "test";
@@ -159,7 +163,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void sendException() throws Exception {
+    public void sendException() {
         String token = "checkingExceptions";
         String type = "badType";
         String loggerName = "exceptionProducer";
@@ -190,7 +194,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void testMDC() throws Exception {
+    public void testMDC() {
         String token = "mdcTokensAreTheBest";
         String type = "mdcType";
         String loggerName = "mdcTesting";
@@ -216,7 +220,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void testMarker() throws Exception {
+    public void testMarker() {
         String token = "markerToken";
         String type = "markerType";
         String loggerName = "markerTesting";
@@ -224,12 +228,14 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String markerTestValue = "MyMarker";
         int drainTimeout = 1;
         String message1 = "Simple log line - "+random(5);
-
         Marker marker = MarkerFactory.getMarker(markerTestValue);
-
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
-        testLogger.info(marker, message1);
+//        Map logstashMarker = new HashMap();
+//        logstashMarker.put("customkey_str", "value1");
+//        logstashMarker.put("projectid_int", 5);
+//        testLogger.info(Markers.appendEntries(logstashMarker) , message1);
 
+        testLogger.info(marker, message1);
         sleepSeconds(2 * drainTimeout);
 
         mockListener.assertNumberOfReceivedMsgs(1);
@@ -239,7 +245,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void testContextReset() throws Exception {
+    public void testContextReset() {
         logger.info("context.reset() is called when logback loads a new logback.xml in-flight");
         String token = "testingContextReset";
         String type = "contextResetType";
@@ -293,7 +299,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
     }
 
-    public void assertAdditionalFields(MockLogzioBulkListener.LogRequest logRequest, Map<String, String> additionalFields) {
+    private void assertAdditionalFields(MockLogzioBulkListener.LogRequest logRequest, Map<String, String> additionalFields) {
         additionalFields.forEach((field, value) -> {
             String fieldValueInLog = logRequest.getStringFieldOrNull(field);
             assertThat(fieldValueInLog)
