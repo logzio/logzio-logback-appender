@@ -27,9 +27,9 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
     @Test
     public void validateJsonMessage(){
-        String token = "validatingAdditionalFields";
-        String type = "willTryWithOrWithoutEnvironmentVariables";
-        String loggerName = "additionalLogger";
+        String token = "validateJsonMessageToken";
+        String type = "validateJsonMessageType";
+        String loggerName = "validateJsonMessageLogger";
         int drainTimeout = 1;
         String messageText = "message test";
 
