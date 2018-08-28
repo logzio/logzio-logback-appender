@@ -75,11 +75,11 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         this.format = format;
     }
 
-    public String getMarkersFormatFormat() {
+    public String getMarkersFormat() {
         return markersFormat;
     }
 
-    public void setMarkersFormatFormat(String markersFormat) {
+    public void setMarkersFormat(String markersFormat) {
         this.markersFormat = markersFormat;
     }
 

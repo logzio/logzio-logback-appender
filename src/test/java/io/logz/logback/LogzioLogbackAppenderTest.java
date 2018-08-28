@@ -5,6 +5,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import io.logz.sender.com.google.gson.Gson;
 import io.logz.test.MockLogzioBulkListener;
+import net.logstash.logback.marker.Markers;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -230,10 +231,6 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String message1 = "Simple log line - "+random(5);
         Marker marker = MarkerFactory.getMarker(markerTestValue);
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
-//        Map logstashMarker = new HashMap();
-//        logstashMarker.put("customkey_str", "value1");
-//        logstashMarker.put("projectid_int", 5);
-//        testLogger.info(Markers.appendEntries(logstashMarker) , message1);
 
         testLogger.info(marker, message1);
         sleepSeconds(2 * drainTimeout);
@@ -242,6 +239,34 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
         assertThat(logRequest.getStringFieldOrNull(markerKey)).isEqualTo(markerTestValue);
+    }
+
+    @Test
+    public void testJsonMarkers() {
+        String token = "markersJsonToken";
+        String type = "markersJsonType";
+        String loggerName = "markersJsonTesting";
+        String markerKey = "marker";
+        int drainTimeout = 1;
+        String message1 = "Simple log line - "+random(5);
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
+        LogzioLogbackAppender logzioLogbackAppender =
+                (LogzioLogbackAppender)((ch.qos.logback.classic.Logger)testLogger).getAppender("LogzioLogbackAppender");
+        logzioLogbackAppender.setMarkersFormat("json");
+
+        Map logstashMarker = new HashMap();
+        logstashMarker.put("customkey_str", "value1");
+        logstashMarker.put("projectid_int", 5);
+        testLogger.info(Markers.appendEntries(logstashMarker) , message1);
+
+        sleepSeconds(2 * drainTimeout);
+
+        mockListener.assertNumberOfReceivedMsgs(1);
+        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
+        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
+        assertThat(logRequest.getStringFieldOrNull("customkey_str")).isEqualTo("value1");
+        assertThat(logRequest.getStringFieldOrNull("projectid_int")).isEqualTo("5");
     }
 
     @Test
