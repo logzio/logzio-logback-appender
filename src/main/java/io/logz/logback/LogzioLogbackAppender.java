@@ -15,6 +15,7 @@ import io.logz.sender.exceptions.LogzioParameterErrorException;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -260,7 +261,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             loggingEvent.getMDCPropertyMap().forEach(logMessage::addProperty);
         }
 
-        logMessage.addProperty(TIMESTAMP, new Date(loggingEvent.getTimeStamp()).toInstant().toString());
+        logMessage.addProperty(TIMESTAMP, Instant.ofEpochMilli(loggingEvent.getTimeStamp()).toString());
         logMessage.addProperty(LOGLEVEL,loggingEvent.getLevel().levelStr);
 
         if (loggingEvent.getMarker() != null) {
