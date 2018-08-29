@@ -5,7 +5,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import io.logz.sender.com.google.gson.Gson;
 import io.logz.test.MockLogzioBulkListener;
-import net.logstash.logback.marker.Markers;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +124,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String type = "withOrWithoutHostnamr";
         String loggerName = "runningOutOfIdeasHere";
         int drainTimeout = 1;
-        String message1 = "Hostname log - " +  random(5);
+        String message1 = "Hostname log - " + random(5);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, true, false, null);
         testLogger.info(message1);
@@ -147,7 +146,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String type = "withLineType";
         String loggerName = "test";
         int drainTimeout = 1;
-        String message1 = "Hostname log - " +  random(5);
+        String message1 = "Hostname log - " + random(5);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, true, null);
         testLogger.info(message1);
@@ -200,7 +199,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String type = "mdcType";
         String loggerName = "mdcTesting";
         int drainTimeout = 1;
-        String message1 = "Simple log line - "+random(5);
+        String message1 = "Simple log line - " + random(5);
         String mdcKey = "mdc-key";
         String mdcValue = "mdc-value";
 
@@ -248,17 +247,17 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String loggerName = "markersJsonTesting";
         String markerKey = "marker";
         int drainTimeout = 1;
-        String message1 = "Simple log line - "+random(5);
+        String message1 = "Simple log line - " + random(5);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
         LogzioLogbackAppender logzioLogbackAppender =
                 (LogzioLogbackAppender)((ch.qos.logback.classic.Logger)testLogger).getAppender("LogzioLogbackAppender");
         logzioLogbackAppender.setMarkersFormat("json");
 
-        Map logstashMarker = new HashMap();
-        logstashMarker.put("customkey_str", "value1");
-        logstashMarker.put("projectid_int", 5);
-        testLogger.info(Markers.appendEntries(logstashMarker) , message1);
+        Map markerMap = new HashMap();
+        markerMap.put("customkey_str", "value1");
+        markerMap.put("projectid_int", 5);
+        testLogger.info(MarkerFactory.getMarker(markerMap.toString()), message1);
 
         sleepSeconds(2 * drainTimeout);
 
@@ -277,8 +276,8 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String loggerName = "ContextResetLogger";
         int drainTimeout = 1;
 
-        String message1 = "Before Reset Line - "+random(5);
-        String message2 = "After Reset Line - "+random(5);
+        String message1 = "Before Reset Line - " + random(5);
+        String message2 = "After Reset Line - " + random(5);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
 
