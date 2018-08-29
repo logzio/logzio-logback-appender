@@ -50,7 +50,8 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 | **debug**       | *false*                                    | Print some debug messages to stdout to help to diagnose issues |
 | **line**       | *false*                                    | Print the line of code that generated this log  |
 | **compressRequests**       | *false*                                    | Boolean. `true` if logs are compressed in gzip format before sending. `false` if logs are sent uncompressed. |
-| **format** | *text*  | Optional. `json` if the logged message is to be parsed as a JSON (in such a way that each JSON node will be a field in logz.io) or `text` if the logged message is to be treated as plain text.
+| **format** | *text*  | Optional. `json` if the logged message is to be parsed as a one level JSON (in such a way that each JSON node will be a field in logz.io) or `text` if the logged message is to be treated as plain text.|
+| **markersFormat** | *text*  | Optional. `json` if the marker is to be parsed as a one level JSON (in such a way that each JSON node will be a field in logz.io), `text` if the marker is to be treated as plain text, or ignore if the marker is to be ignored and not included in the log.
 
 ### Code Example
 ```java
@@ -123,6 +124,8 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.19 - 1.0.20
+   - added support for one level json format log message and marker. 
  - 1.0.18
    - added `compressRequests` parameter to enable gzip compression of the logs before they are sent.
    - added option to inject system property value into additionalFields, logzioUrl and token.
