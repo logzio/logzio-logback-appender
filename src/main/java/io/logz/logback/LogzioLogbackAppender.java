@@ -15,14 +15,11 @@ import io.logz.sender.exceptions.LogzioParameterErrorException;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
@@ -38,9 +35,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private static final String EXCEPTION = "exception";
     private static final String FORMAT_TEXT = "text";
     private static final String FORMAT_JSON = "json";
-    private static final String FORMAT_IGNORE = "ignore";
 
-    private static final Set<String> reservedFields =  new HashSet<>(Arrays.asList(TIMESTAMP,LOGLEVEL, MARKER, MESSAGE,LOGGER,THREAD,EXCEPTION));
+    private static final Set<String> reservedFields =  new HashSet<>(Arrays.asList(new String[] {TIMESTAMP,LOGLEVEL, MARKER, MESSAGE,LOGGER,THREAD,EXCEPTION}));
 
     private LogzioSender logzioSender;
     private ThrowableProxyConverter throwableProxyConverter;
@@ -62,7 +58,6 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private boolean compressRequests = false;
     private int gcPersistedQueueFilesIntervalSeconds = 30;
     private String format = FORMAT_TEXT;
-    private String markersFormat = FORMAT_TEXT;
 
     public LogzioLogbackAppender() {
         super();
@@ -74,14 +69,6 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
     public void setFormat(String format) {
         this.format = format;
-    }
-
-    public String getMarkersFormat() {
-        return markersFormat;
-    }
-
-    public void setMarkersFormat(String markersFormat) {
-        this.markersFormat = markersFormat;
     }
 
     public void setToken(String logzioToken) {
@@ -221,7 +208,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         }
         throwableProxyConverter = new ThrowableProxyConverter();
         lineOfCallerConverter = new LineOfCallerConverter();
-        throwableProxyConverter.setOptionList(Collections.singletonList("full"));
+        throwableProxyConverter.setOptionList(Arrays.asList("full"));
         throwableProxyConverter.start();
         super.start();
     }
@@ -247,10 +234,16 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     }
 
     private JsonObject formatMessageAsJson(ILoggingEvent loggingEvent) {
-        JsonObject logMessage = new JsonObject();
+        JsonObject logMessage;
 
         if (format.equals(FORMAT_JSON)) {
-            addJsonObject(logMessage, loggingEvent.getFormattedMessage(), MESSAGE);
+            try {
+                JsonElement jsonElement = gson.fromJson(loggingEvent.getFormattedMessage(), JsonElement.class);
+                logMessage = jsonElement.getAsJsonObject();
+            } catch (Exception e) {
+                logMessage = new JsonObject();
+                logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
+            }
         } else {
             logMessage = new JsonObject();
             logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
@@ -261,20 +254,11 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             loggingEvent.getMDCPropertyMap().forEach(logMessage::addProperty);
         }
 
-        logMessage.addProperty(TIMESTAMP, Instant.ofEpochMilli(loggingEvent.getTimeStamp()).toString());
+        logMessage.addProperty(TIMESTAMP, new Date(loggingEvent.getTimeStamp()).toInstant().toString());
         logMessage.addProperty(LOGLEVEL,loggingEvent.getLevel().levelStr);
 
         if (loggingEvent.getMarker() != null) {
-            switch (markersFormat) {
-                case FORMAT_IGNORE:
-                    break;
-                case FORMAT_JSON:
-                    addJsonObject(logMessage, loggingEvent.getMarker().toString(), MARKER);
-                    break;
-                default:
-                    logMessage.addProperty(MARKER, loggingEvent.getMarker().toString());
-                    break;
-            }
+            logMessage.addProperty(MARKER, loggingEvent.getMarker().toString());
         }
 
         logMessage.addProperty(LOGGER, loggingEvent.getLoggerName());
@@ -292,20 +276,6 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         }
 
         return logMessage;
-    }
-
-    private void addJsonObject(JsonObject logMessage, String jsonData, String keyOnFail) {
-        try {
-            JsonElement jsonElement = gson.fromJson(jsonData, JsonElement.class);
-            Set<Entry<String, JsonElement>> jsonSet = jsonElement.getAsJsonObject().entrySet();
-            for (Entry<String, JsonElement> entry : jsonSet) {
-                logMessage.add(entry.getKey(), entry.getValue());
-            }
-
-        } catch (Exception e) {
-            //on fail just add as a string
-            logMessage.addProperty(keyOnFail, jsonData);
-        }
     }
 
     @Override
