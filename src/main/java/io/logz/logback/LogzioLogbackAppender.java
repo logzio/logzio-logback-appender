@@ -249,7 +249,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         JsonObject logMessage = new JsonObject();
 
         if (format.equals(FORMAT_JSON)) {
-            addJsonObject(logMessage, loggingEvent.getFormattedMessage());
+            addJsonObject(logMessage, loggingEvent.getFormattedMessage(), MESSAGE);
         } else {
             logMessage = new JsonObject();
             logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
@@ -268,7 +268,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
                 case FORMAT_IGNORE:
                     break;
                 case FORMAT_JSON:
-                    addJsonObject(logMessage, loggingEvent.getMarker().toString());
+                    addJsonObject(logMessage, loggingEvent.getMarker().toString(), MARKER);
                     break;
                 default:
                     logMessage.addProperty(MARKER, loggingEvent.getMarker().toString());
@@ -293,7 +293,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         return logMessage;
     }
 
-    private void addJsonObject(JsonObject logMessage, String jsonData) {
+    private void addJsonObject(JsonObject logMessage, String jsonData, String keyOnFail) {
         try {
             JsonElement jsonElement = gson.fromJson(jsonData, JsonElement.class);
             Set<Entry<String, JsonElement>> jsonSet = jsonElement.getAsJsonObject().entrySet();
@@ -303,7 +303,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
         } catch (Exception e) {
             //on fail just add as a string
-            logMessage.addProperty(MESSAGE, jsonData);
+            logMessage.addProperty(keyOnFail, jsonData);
         }
     }
 
