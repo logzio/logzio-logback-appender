@@ -1,6 +1,5 @@
 package io.logz.logback;
 
-
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.core.Context;
@@ -32,6 +31,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     private final static Logger logger = LoggerFactory.getLogger(LogzioLogbackAppenderTest.class);
     private LogzioLogbackAppender logzioLogbackAppender;
 
+
     @Parameterized.Parameters
     public static Collection<Object[]> logzioSenderBuilders() {
         List<LogzioLogbackAppender> appenders = new ArrayList<>();
@@ -48,6 +48,9 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     public LogzioLogbackAppenderTest(LogzioLogbackAppender logzioLogbackAppender) {
+        if (this.logzioLogbackAppender != null) {
+            this.logzioLogbackAppender.stop();
+        }
         this.logzioLogbackAppender = logzioLogbackAppender;
     }
 
@@ -354,6 +357,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
         assertThat(logRequest.getStringFieldOrNull("exception")).isEqualTo(expectedException);
+
     }
 
     private void assertAdditionalFields(MockLogzioBulkListener.LogRequest logRequest, Map<String, String> additionalFields) {
@@ -367,7 +371,8 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     private Logger createLogger(String token, String type, String loggerName, Integer drainTimeout,
-                                boolean addHostname, boolean line, String additionalFields, boolean compressRequests) {
+                                boolean addHostname, boolean line, String additionalFields,
+                                boolean compressRequests) {
         logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, addHostname={}, line={}, additionalFields={} ",
                 loggerName, token, type, drainTimeout, addHostname, line, additionalFields);
 
@@ -394,5 +399,4 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         logbackLogger.setAdditive(false);
         return logbackLogger;
     }
-
 }

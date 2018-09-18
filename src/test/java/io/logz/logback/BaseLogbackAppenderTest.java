@@ -1,6 +1,5 @@
 package io.logz.logback;
 
-import ch.qos.logback.core.Context;
 import io.logz.test.MockLogzioBulkListener;
 import org.junit.After;
 import org.junit.Before;
@@ -9,8 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * @author MarinaRazumovsky
  */
@@ -18,7 +15,7 @@ public abstract class BaseLogbackAppenderTest {
 
     private final static Logger logger = LoggerFactory.getLogger(BaseLogbackAppenderTest.class);
 
-    MockLogzioBulkListener mockListener;
+    protected MockLogzioBulkListener mockListener;
 
     @Before
     public void startMockListener() throws Exception {

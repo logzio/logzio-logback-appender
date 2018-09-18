@@ -204,7 +204,14 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     @Override
     public void start() {
         setHostname();
-        LogzioSender.Builder logzioSenderBuilder = getSenderBuilder();
+        HttpsRequestConfiguration conf;
+        try {
+            conf = getHttpsRequestConfiguration();
+        } catch (LogzioParameterErrorException e) {
+            addError("Some of the configuration parameters of logz.io is wrong: " + e.getMessage(), e);
+            return;
+        }
+        LogzioSender.Builder logzioSenderBuilder = getSenderBuilder(conf);
         if (inMemoryQueue) {
             if (!validateInMemoryQueueCapacityBytes()) {
                 return;
@@ -243,15 +250,13 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         super.start();
     }
 
-    private LogzioSender.Builder getSenderBuilder() {
-        SenderStatusReporter reporter = new StatusReporter();
-        HttpsRequestConfiguration conf = getHttpsRequestConfiguration();
+    private LogzioSender.Builder getSenderBuilder(HttpsRequestConfiguration conf) {
         return LogzioSender
                     .builder()
                     .setDebug(debug)
                     .setDrainTimeoutSec(drainTimeoutSec)
                     .setHttpsRequestConfiguration(conf)
-                    .setReporter(reporter)
+                    .setReporter(new StatusReporter())
                     .setTasksExecutor(context.getScheduledExecutorService());
     }
 
@@ -305,27 +310,22 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         }
     }
 
-    private HttpsRequestConfiguration getHttpsRequestConfiguration() {
-        try {
-            return HttpsRequestConfiguration
-                    .builder()
-                    .setLogzioListenerUrl(logzioUrl)
-                    .setSocketTimeout(socketTimeout)
-                    .setLogzioType(logzioType)
-                    .setLogzioToken(logzioToken)
-                    .setConnectTimeout(connectTimeout)
-                    .setCompressRequests(compressRequests)
-                    .build();
-        } catch (LogzioParameterErrorException e) {
-            addError("Some of the configuration parameters of logz.io is wrong: " + e.getMessage(), e);
-            return null;
-        }
+    private HttpsRequestConfiguration getHttpsRequestConfiguration() throws LogzioParameterErrorException {
+        return HttpsRequestConfiguration
+                .builder()
+                .setLogzioListenerUrl(logzioUrl)
+                .setSocketTimeout(socketTimeout)
+                .setLogzioType(logzioType)
+                .setLogzioToken(logzioToken)
+                .setConnectTimeout(connectTimeout)
+                .setCompressRequests(compressRequests)
+                .build();
     }
 
     @Override
     public void stop() {
         if (logzioSender != null) logzioSender.stop();
-        if ( throwableProxyConverter != null ) throwableProxyConverter.stop();
+        if (throwableProxyConverter != null) throwableProxyConverter.stop();
         super.stop();
     }
 
@@ -334,7 +334,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             String variableName = value.replace("$", "");
             String envVariable = System.getenv(variableName);
 
-            if(envVariable == null || envVariable.isEmpty()) {
+            if (envVariable == null || envVariable.isEmpty()) {
                 envVariable = System.getProperty(variableName);
             }
             return envVariable;
