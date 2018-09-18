@@ -14,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author MarinaRazumovsky
  */
-public class BaseLogbackAppenderTest {
+public abstract class BaseLogbackAppenderTest {
 
     private final static Logger logger = LoggerFactory.getLogger(BaseLogbackAppenderTest.class);
 
-    protected MockLogzioBulkListener mockListener;
+    MockLogzioBulkListener mockListener;
 
     @Before
     public void startMockListener() throws Exception {
@@ -31,43 +31,7 @@ public class BaseLogbackAppenderTest {
         mockListener.stop();
     }
 
-    protected Logger createLogger(String token, String type, String loggerName, Integer drainTimeout,
-                                  boolean addHostname,boolean line, String additionalFields, boolean compressRequests) {
-
-        logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, addHostname={}, line={}, additionalFields={} ",
-                loggerName, token, type, drainTimeout, addHostname, line, additionalFields);
-
-        ch.qos.logback.classic.Logger logbackLogger =  (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(loggerName);
-        Context logbackContext = logbackLogger.getLoggerContext();
-        LogzioLogbackAppender logzioLogbackAppender = new LogzioLogbackAppender();
-        logzioLogbackAppender.setContext(logbackContext);
-        logzioLogbackAppender.setToken(token);
-        logzioLogbackAppender.setLogzioType(type);
-        logzioLogbackAppender.setDebug(true);
-        logzioLogbackAppender.setLine(line);
-        logzioLogbackAppender.setLogzioUrl("http://" + mockListener.getHost() + ":" + mockListener.getPort());
-        logzioLogbackAppender.setAddHostname(addHostname);
-        logzioLogbackAppender.setCompressRequests(compressRequests);
-        logzioLogbackAppender.setName("LogzioLogbackAppender");
-        if (drainTimeout != null) {
-            logzioLogbackAppender.setDrainTimeoutSec(drainTimeout);
-        }
-        if (additionalFields != null) {
-            logzioLogbackAppender.setAdditionalFields(additionalFields);
-        }
-        logzioLogbackAppender.start();
-        assertThat(logzioLogbackAppender.isStarted()).isTrue();
-        logbackLogger.addAppender(logzioLogbackAppender);
-        logbackLogger.setAdditive(false);
-        return logbackLogger;
-    }
-
-    protected Logger createLogger(String token, String type, String loggerName, Integer drainTimeout,
-                                  boolean addHostname,boolean line, String additionalFields) {
-        return createLogger(token, type, loggerName, drainTimeout, addHostname, line, additionalFields, false);
-    }
-
-    protected void sleepSeconds(int seconds) {
+    void sleepSeconds(int seconds) {
         logger.info("Sleeping {} [sec]...", seconds);
         try {
             Thread.sleep(seconds * 1000);

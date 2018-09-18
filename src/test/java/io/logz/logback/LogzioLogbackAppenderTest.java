@@ -3,9 +3,12 @@ package io.logz.logback;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.Context;
 import io.logz.sender.com.google.gson.Gson;
 import io.logz.test.MockLogzioBulkListener;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -13,22 +16,46 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
-
+@RunWith(Parameterized.class)
 public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
     private final static Logger logger = LoggerFactory.getLogger(LogzioLogbackAppenderTest.class);
+    private LogzioLogbackAppender logzioLogbackAppender;
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> logzioSenderBuilders() {
+        List<LogzioLogbackAppender> appenders = new ArrayList<>();
+        appenders.add(new LogzioLogbackAppender());
+        LogzioLogbackAppender inMemoryQueueApeender = new LogzioLogbackAppender();
+        inMemoryQueueApeender.setInMemoryQueue(true);
+        appenders.add(inMemoryQueueApeender);
+
+        Collection<Object[]> result = new ArrayList<>();
+        for (LogzioLogbackAppender appender : appenders) {
+            result.add(new Object[]{appender});
+        }
+        return result;
+    }
+
+    public LogzioLogbackAppenderTest(LogzioLogbackAppender logzioLogbackAppender) {
+        this.logzioLogbackAppender = logzioLogbackAppender;
+    }
 
     @Test
     public void validateJsonMessage(){
         String token = "validateJsonMessageToken";
-        String type = "validateJsonMessageType";
-        String loggerName = "validateJsonMessageLogger";
+        String type = "validateJsonMessageType" + random(8);
+        String loggerName = "validateJsonMessageLogger" + random(8);
         int drainTimeout = 1;
         String messageText = "message test";
 
@@ -39,10 +66,9 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
         String message1 = new Gson().toJson(map);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
-        LogzioLogbackAppender logzioLogbackAppender =
-                (LogzioLogbackAppender)((ch.qos.logback.classic.Logger)testLogger).getAppender("LogzioLogbackAppender");
         logzioLogbackAppender.setFormat("json");
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null, false);
+
         testLogger.info(message1);
 
         sleepSeconds(2 * drainTimeout);
@@ -58,13 +84,13 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     @Test
     public void simpleAppending() {
         String token = "aBcDeFgHiJkLmNoPqRsT";
-        String type = "awesomeType";
-        String loggerName = "simpleAppending";
+        String type = "awesomeType" + random(8);
+        String loggerName = "simpleAppending" + random(8);
         int drainTimeout = 1;
         String message1 = "Testing.." + random(5);
         String message2 = "Warning test.." + random(5);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null, false);
         testLogger.info(message1);
         testLogger.warn(message2);
 
@@ -78,8 +104,8 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     @Test
     public void simpleGzipAppending() {
         String token = "aBcDeFgHiJkLmNoPqRsTGzIp";
-        String type = "awesomeGzipType";
-        String loggerName = "simpleGzipAppending";
+        String type = "awesomeGzipType" + random(8);
+        String loggerName = "simpleGzipAppending" + random(8);
         int drainTimeout = 1;
         String message1 = "Testing.." + random(5);
         String message2 = "Warning test.." + random(5);
@@ -98,8 +124,8 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     @Test
     public void validateAdditionalFields() {
         String token = "validatingAdditionalFields";
-        String type = "willTryWithOrWithoutEnvironmentVariables";
-        String loggerName = "additionalLogger";
+        String type = "willTryWithOrWithoutEnvironmentVariables" + random(8);
+        String loggerName = "additionalLogger" + random(8);
         int drainTimeout = 1;
         String message1 = "Just a log - " + random(5);
         Map<String,String > additionalFields = new HashMap<>();
@@ -107,7 +133,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         additionalFields.put("java_home", System.getenv("JAVA_HOME"));
         additionalFields.put("testing", "yes");
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, additionalFieldsString);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, additionalFieldsString, false);
         testLogger.info(message1);
 
         sleepSeconds(2 * drainTimeout);
@@ -121,12 +147,12 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     @Test
     public void existingHostname() throws Exception {
         String token = "checkingHostname";
-        String type = "withOrWithoutHostnamr";
-        String loggerName = "runningOutOfIdeasHere";
+        String type = "withOrWithoutHostnamr" + random(8);
+        String loggerName = "runningOutOfIdeasHere" + random(8);
         int drainTimeout = 1;
         String message1 = "Hostname log - " + random(5);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, true, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, true, false, null, false);
         testLogger.info(message1);
 
         // Sleep double time the drain timeout
@@ -143,12 +169,12 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     @Test
     public void existingLine() {
         String token = "checkingLine";
-        String type = "withLineType";
-        String loggerName = "test";
+        String type = "withLineType" + random(8);
+        String loggerName = "test" + random(8);
         int drainTimeout = 1;
         String message1 = "Hostname log - " + random(5);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, true, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, true, null, false);
         testLogger.info(message1);
 
         // Sleep double time the drain timeout
@@ -165,13 +191,13 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     @Test
     public void sendException() {
         String token = "checkingExceptions";
-        String type = "badType";
-        String loggerName = "exceptionProducer";
+        String type = "badType" + random(8);
+        String loggerName = "exceptionProducer" + random(8);
         int drainTimeout = 1;
         Throwable exception = null;
         String message1 = "This is not an int..";
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null, false);
 
         try {
             Integer.parseInt(message1);
@@ -196,8 +222,8 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     @Test
     public void testMDC() {
         String token = "mdcTokensAreTheBest";
-        String type = "mdcType";
-        String loggerName = "mdcTesting";
+        String type = "mdcType" + random(8);
+        String loggerName = "mdcTesting" + random(8);
         int drainTimeout = 1;
         String message1 = "Simple log line - " + random(5);
         String mdcKey = "mdc-key";
@@ -208,7 +234,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         mdcKv.put("logger", "Doesn't matter");
         MDC.put(mdcKey, mdcValue);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null, false);
         testLogger.info(message1);
 
         sleepSeconds(2 * drainTimeout);
@@ -222,14 +248,14 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     @Test
     public void testMarker() {
         String token = "markerToken";
-        String type = "markerType";
-        String loggerName = "markerTesting";
+        String type = "markerType" + random(8);
+        String loggerName = "markerTesting" + random(8);
         String markerKey = "marker";
         String markerTestValue = "MyMarker";
         int drainTimeout = 1;
         String message1 = "Simple log line - "+random(5);
         Marker marker = MarkerFactory.getMarker(markerTestValue);
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null, false);
 
         testLogger.info(marker, message1);
         sleepSeconds(2 * drainTimeout);
@@ -241,45 +267,17 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void testJsonMarkers() {
-        String token = "markersJsonToken";
-        String type = "markersJsonType";
-        String loggerName = "markersJsonTesting";
-        String markerKey = "marker";
-        int drainTimeout = 1;
-        String message1 = "Simple log line - " + random(5);
-
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
-        LogzioLogbackAppender logzioLogbackAppender =
-                (LogzioLogbackAppender)((ch.qos.logback.classic.Logger)testLogger).getAppender("LogzioLogbackAppender");
-        logzioLogbackAppender.setMarkersFormat("json");
-
-        Map markerMap = new HashMap();
-        markerMap.put("customkey_str", "value1");
-        markerMap.put("projectid_int", 5);
-        testLogger.info(MarkerFactory.getMarker(markerMap.toString()), message1);
-
-        sleepSeconds(2 * drainTimeout);
-
-        mockListener.assertNumberOfReceivedMsgs(1);
-        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
-        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
-        assertThat(logRequest.getStringFieldOrNull("customkey_str")).isEqualTo("value1");
-        assertThat(logRequest.getStringFieldOrNull("projectid_int")).isEqualTo("5");
-    }
-
-    @Test
     public void testContextReset() {
         logger.info("context.reset() is called when logback loads a new logback.xml in-flight");
         String token = "testingContextReset";
-        String type = "contextResetType";
-        String loggerName = "ContextResetLogger";
+        String type = "contextResetType" + random(8);
+        String loggerName = "ContextResetLogger" + random(8);
         int drainTimeout = 1;
 
         String message1 = "Before Reset Line - " + random(5);
         String message2 = "After Reset Line - " + random(5);
 
-        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null, false);
 
         testLogger.info(message1);
         sleepSeconds(2 * drainTimeout);
@@ -294,7 +292,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         loggerContext.reset();
 
         // We need to add the appender again
-        testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null);
+        testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null, false);
 
         testLogger.warn(message2);
         sleepSeconds(2 * drainTimeout);
@@ -307,12 +305,12 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     @Test
     public void testTokenAndLogzioUrlFromSystemEnvironment() {
         String token = System.getenv("JAVA_HOME");
-        String type = "testType";
-        String loggerName = "testLogger";
+        String type = "testType" + random(8);
+        String loggerName = "testLogger" + random(8);
         int drainTimeout = 1;
 
         String message1 = "Just a log - " + random(5);
-        Logger testLogger = createLogger("$JAVA_HOME", type, loggerName, drainTimeout, false, false, null);
+        Logger testLogger = createLogger("$JAVA_HOME", type, loggerName, drainTimeout, false, false, null, false);
 
         testLogger.info(message1);
 
@@ -323,6 +321,41 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
     }
 
+    @Test
+    public void checkExactStackTrace() throws Exception {
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final MyRunner.ExceptionGenerator exceptionGenerator = new MyRunner.ExceptionGenerator();
+
+        // We need to generate an exception with constant stack trace
+        new Thread(new MyRunner(countDownLatch, exceptionGenerator)).start();
+        countDownLatch.await();
+
+        String token = "exceptionToken";
+        String type = "stacktraceType" + random(8);
+        String loggerName = "traceLogger" + random(8);
+        int drainTimeout = 1;
+
+        String message1 = "Any line change here can cause the test to break";
+
+        String expectedException = "java.lang.RuntimeException: Got NPE!\n" +
+                "\tat io.logz.logback.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:33)\n" +
+                "\tat io.logz.logback.MyRunner.run(MyRunner.java:18)\n" +
+                "\tat java.lang.Thread.run(Thread.java:748)\n" +
+                "Caused by: java.lang.NullPointerException: null\n" +
+                "\tat io.logz.logback.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:31)\n" +
+                "\t... 2 common frames omitted\n";
+
+        Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null, false);
+
+        testLogger.info(message1, exceptionGenerator.getE());
+        sleepSeconds(drainTimeout * 2);
+
+        mockListener.assertNumberOfReceivedMsgs(1);
+        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
+        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
+        assertThat(logRequest.getStringFieldOrNull("exception")).isEqualTo(expectedException);
+    }
+
     private void assertAdditionalFields(MockLogzioBulkListener.LogRequest logRequest, Map<String, String> additionalFields) {
         additionalFields.forEach((field, value) -> {
             String fieldValueInLog = logRequest.getStringFieldOrNull(field);
@@ -331,6 +364,35 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
                     .isNotNull()
                     .isEqualTo(value);
         });
+    }
+
+    private Logger createLogger(String token, String type, String loggerName, Integer drainTimeout,
+                                boolean addHostname, boolean line, String additionalFields, boolean compressRequests) {
+        logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, addHostname={}, line={}, additionalFields={} ",
+                loggerName, token, type, drainTimeout, addHostname, line, additionalFields);
+
+        ch.qos.logback.classic.Logger logbackLogger =  (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(loggerName);
+        Context logbackContext = logbackLogger.getLoggerContext();
+        logzioLogbackAppender.setContext(logbackContext);
+        logzioLogbackAppender.setToken(token);
+        logzioLogbackAppender.setLogzioType(type);
+        logzioLogbackAppender.setDebug(true);
+        logzioLogbackAppender.setLine(line);
+        logzioLogbackAppender.setLogzioUrl("http://" + mockListener.getHost() + ":" + mockListener.getPort());
+        logzioLogbackAppender.setAddHostname(addHostname);
+        logzioLogbackAppender.setCompressRequests(compressRequests);
+        logzioLogbackAppender.setName("LogzioLogbackAppender");
+        if (drainTimeout != null) {
+            logzioLogbackAppender.setDrainTimeoutSec(drainTimeout);
+        }
+        if (additionalFields != null) {
+            logzioLogbackAppender.setAdditionalFields(additionalFields);
+        }
+        logzioLogbackAppender.start();
+        assertThat(logzioLogbackAppender.isStarted()).isTrue();
+        logbackLogger.addAppender(logzioLogbackAppender);
+        logbackLogger.setAdditive(false);
+        return logbackLogger;
     }
 
 }

@@ -36,7 +36,7 @@
     </scm>
 
     <properties>
-        <logzio-sender-version>1.0.10</logzio-sender-version>
+        <logzio-sender-version>1.0.16</logzio-sender-version>
     </properties>
 
     <build>
