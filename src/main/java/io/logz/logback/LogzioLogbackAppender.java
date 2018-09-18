@@ -18,6 +18,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,12 +37,11 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private static final String EXCEPTION = "exception";
     private static final String FORMAT_TEXT = "text";
     private static final String FORMAT_JSON = "json";
-    private static final String FORMAT_IGNORE = "ignore";
     private static final int DONT_LIMIT_QUEUE_SPACE = -1;
     private static final int LOWER_PERCENTAGE_FS_SPACE = 1;
     private static final int UPPER_PERCENTAGE_FS_SPACE = 100;
 
-    private static final Set<String> reservedFields =  new HashSet<>(Arrays.asList(new String[] {TIMESTAMP,LOGLEVEL, MARKER, MESSAGE,LOGGER,THREAD,EXCEPTION}));
+    private static final Set<String> reservedFields =  new HashSet<>(Arrays.asList(TIMESTAMP,LOGLEVEL, MARKER, MESSAGE,LOGGER,THREAD,EXCEPTION));
 
     private LogzioSender logzioSender;
     private ThrowableProxyConverter throwableProxyConverter;
@@ -233,7 +233,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         logzioSender.start();
         throwableProxyConverter = new ThrowableProxyConverter();
         lineOfCallerConverter = new LineOfCallerConverter();
-        throwableProxyConverter.setOptionList(Arrays.asList("full"));
+        throwableProxyConverter.setOptionList(Collections.singletonList("full"));
         throwableProxyConverter.start();
         super.start();
     }
