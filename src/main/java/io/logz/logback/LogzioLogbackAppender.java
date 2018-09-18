@@ -112,7 +112,6 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     }
 
     /**
-     *
      * @param bufferDir: queue dir path
      * @deprecated use {@link #setQueueDir(String)}
      */
