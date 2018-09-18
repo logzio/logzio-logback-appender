@@ -85,7 +85,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void simpleAppending() {
+    public void simpleAppending() throws Exception {
         String token = "aBcDeFgHiJkLmNoPqRsT";
         String type = "awesomeType" + random(8);
         String loggerName = "simpleAppending" + random(8);
@@ -105,7 +105,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void simpleGzipAppending() {
+    public void simpleGzipAppending() throws Exception {
         String token = "aBcDeFgHiJkLmNoPqRsTGzIp";
         String type = "awesomeGzipType" + random(8);
         String loggerName = "simpleGzipAppending" + random(8);
@@ -125,7 +125,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
     
     @Test
-    public void validateAdditionalFields() {
+    public void validateAdditionalFields() throws Exception {
         String token = "validatingAdditionalFields";
         String type = "willTryWithOrWithoutEnvironmentVariables" + random(8);
         String loggerName = "additionalLogger" + random(8);
@@ -153,7 +153,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String type = "withOrWithoutHostnamr" + random(8);
         String loggerName = "runningOutOfIdeasHere" + random(8);
         int drainTimeout = 1;
-        String message1 = "Hostname log - " + random(5);
+        String message1 = "Hostname log - " +  random(5);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, true, false, null, false);
         testLogger.info(message1);
@@ -170,12 +170,12 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void existingLine() {
+    public void existingLine() throws Exception {
         String token = "checkingLine";
         String type = "withLineType" + random(8);
         String loggerName = "test" + random(8);
         int drainTimeout = 1;
-        String message1 = "Hostname log - " + random(5);
+        String message1 = "Hostname log - " +  random(5);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, true, null, false);
         testLogger.info(message1);
@@ -192,7 +192,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void sendException() {
+    public void sendException() throws Exception {
         String token = "checkingExceptions";
         String type = "badType" + random(8);
         String loggerName = "exceptionProducer" + random(8);
@@ -223,12 +223,12 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void testMDC() {
+    public void testMDC() throws Exception {
         String token = "mdcTokensAreTheBest";
         String type = "mdcType" + random(8);
         String loggerName = "mdcTesting" + random(8);
         int drainTimeout = 1;
-        String message1 = "Simple log line - " + random(5);
+        String message1 = "Simple log line - "+random(5);
         String mdcKey = "mdc-key";
         String mdcValue = "mdc-value";
 
@@ -249,7 +249,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void testMarker() {
+    public void testMarker() throws Exception {
         String token = "markerToken";
         String type = "markerType" + random(8);
         String loggerName = "markerTesting" + random(8);
@@ -257,6 +257,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String markerTestValue = "MyMarker";
         int drainTimeout = 1;
         String message1 = "Simple log line - "+random(5);
+
         Marker marker = MarkerFactory.getMarker(markerTestValue);
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null, false);
 
@@ -277,8 +278,8 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String loggerName = "ContextResetLogger" + random(8);
         int drainTimeout = 1;
 
-        String message1 = "Before Reset Line - " + random(5);
-        String message2 = "After Reset Line - " + random(5);
+        String message1 = "Before Reset Line - "+random(5);
+        String message2 = "After Reset Line - "+random(5);
 
         Logger testLogger = createLogger(token, type, loggerName, drainTimeout, false, false, null, false);
 
