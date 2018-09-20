@@ -196,7 +196,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         try {
             conf = getHttpsRequestConfiguration();
         } catch (LogzioParameterErrorException e) {
-            addError("Some of the configuration parameters of logz.io is wrong: " + e.getMessage(), e);
+            addError("Some of the configuration parameters of logz.io are wrong: " + e.getMessage(), e);
             return;
         }
         LogzioSender.Builder logzioSenderBuilder = getSenderBuilder(conf);
