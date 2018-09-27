@@ -12,7 +12,7 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.18</version>
+    <version>1.0.19</version>
 </dependency>
 ```
 
@@ -123,6 +123,7 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.19: added json message format support
  - 1.0.18
    - added `compressRequests` parameter to enable gzip compression of the logs before they are sent.
    - added option to inject system property value into additionalFields, logzioUrl and token.
