@@ -63,6 +63,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private boolean compressRequests = false;
     private boolean inMemoryQueue = false;
     private long inMemoryQueueCapacityBytes = 100 * 1024 * 1024;
+    private long inMemoryLogsCountLimit = DONT_LIMIT_QUEUE_SPACE;
     private int gcPersistedQueueFilesIntervalSeconds = 30;
     private String format = FORMAT_TEXT;
 
@@ -149,6 +150,14 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         return inMemoryQueueCapacityBytes;
     }
 
+    public void setInMemoryLogsCountLimit(long inMemoryLogsCountLimit) {
+        this.inMemoryLogsCountLimit = inMemoryLogsCountLimit;
+    }
+
+    public long getInMemoryLogsCountLimit() {
+        return inMemoryLogsCountLimit;
+    }
+
     public boolean isCompressRequests() { return compressRequests; }
 
     public void setCompressRequests(boolean compressRequests) { this.compressRequests = compressRequests; }
@@ -201,12 +210,13 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         }
         LogzioSender.Builder logzioSenderBuilder = getSenderBuilder(conf);
         if (inMemoryQueue) {
-            if (!validateInMemoryQueueCapacityBytes()) {
+            if (!validateInMemoryThresholds()) {
                 return;
             }
             logzioSenderBuilder
                 .withInMemoryQueue()
                     .setCapacityInBytes(inMemoryQueueCapacityBytes)
+                    .setLogsCountLimit(inMemoryLogsCountLimit)
                 .endInMemoryQueue();
         } else {
             if (!validateFsPercentThreshold()) {
@@ -269,9 +279,13 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         return new File(queueDir,"logzio-logback-appender");
     }
 
-    private boolean validateInMemoryQueueCapacityBytes() {
+    private boolean validateInMemoryThresholds() {
         if (inMemoryQueueCapacityBytes <= 0 && inMemoryQueueCapacityBytes != DONT_LIMIT_QUEUE_SPACE) {
             addError("inMemoryQueueCapacityBytes should be a non zero integer or -1");
+            return false;
+        }
+        if (inMemoryLogsCountLimit <= 0 && inMemoryLogsCountLimit != DONT_LIMIT_QUEUE_SPACE) {
+            addError("inMemoryLogsCountLimit should be a non zero integer or -1");
             return false;
         }
         return true;
