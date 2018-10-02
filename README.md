@@ -54,6 +54,7 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 | Parameter          | Default                              | Explained  |
 | ------------------ | ------------------------------------ | ----- |
 | **inMemoryQueueCapacityBytes**       | *1024 * 1024 * 100*                                | The amount of memory(bytes) we are allowed to use for the memory queue. If the value is -1 the sender will not limit the queue size.|
+| **inMemoryLogsCountLimit**       | *-1*                                | Number of logs we are allowed to have in the queue before dropping logs. If the value is -1 the sender will not limit the number of logs allowed.|
 | **inMemoryQueue**       | *false*                                | Set to true if the appender uses in memory queue. By default the appender uses disk queue|
 
 
