@@ -1,7 +1,15 @@
 package io.logz.logback;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Context;
 import io.logz.test.MockLogzioBulkListener;
+import net.logstash.logback.composite.ContextJsonProvider;
+import net.logstash.logback.composite.loggingevent.ArgumentsJsonProvider;
+import net.logstash.logback.composite.loggingevent.LoggingEventFormattedTimestampJsonProvider;
+import net.logstash.logback.composite.loggingevent.LoggingEventJsonProviders;
+import net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider;
+import net.logstash.logback.composite.loggingevent.MdcJsonProvider;
+import net.logstash.logback.composite.loggingevent.MessageJsonProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.slf4j.Logger;
@@ -54,6 +62,16 @@ public abstract class BaseLogbackAppenderTest {
         });
     }
 
+    protected LoggingEventJsonProviders getCommonJsonProviders() {
+        LoggingEventJsonProviders jsonProviders = new LoggingEventJsonProviders();
+        jsonProviders.addPattern(new LoggingEventPatternJsonProvider());
+        jsonProviders.addArguments(new ArgumentsJsonProvider());
+        jsonProviders.addMessage(new MessageJsonProvider());
+        jsonProviders.addContext(new ContextJsonProvider<ILoggingEvent>());
+        jsonProviders.addMdc(new MdcJsonProvider());
+        return jsonProviders;
+    }
+
     protected Logger createLogger(LogzioLogbackAppender logzioLogbackAppender, String token, String type, String loggerName, Integer drainTimeout,
                                 boolean addHostname, boolean line, String additionalFields,
                                 boolean compressRequests) {
@@ -76,6 +94,10 @@ public abstract class BaseLogbackAppenderTest {
         }
         if (additionalFields != null) {
             logzioLogbackAppender.setAdditionalFields(additionalFields);
+        }
+        if (logzioLogbackAppender.getEncoder() != null) {
+            logzioLogbackAppender.getEncoder().setContext(logbackContext);
+            logzioLogbackAppender.getEncoder().start();
         }
         logzioLogbackAppender.start();
         assertThat(logzioLogbackAppender.isStarted()).isTrue();

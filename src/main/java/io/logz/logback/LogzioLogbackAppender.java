@@ -4,6 +4,7 @@ import ch.qos.logback.classic.pattern.LineOfCallerConverter;
 import ch.qos.logback.classic.pattern.ThrowableProxyConverter;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import ch.qos.logback.core.encoder.Encoder;
 import com.google.common.base.Splitter;
 import io.logz.sender.HttpsRequestConfiguration;
 import io.logz.sender.LogzioSender;
@@ -16,6 +17,7 @@ import io.logz.sender.exceptions.LogzioParameterErrorException;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -66,9 +68,18 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private long inMemoryLogsCountLimit = DONT_LIMIT_QUEUE_SPACE;
     private int gcPersistedQueueFilesIntervalSeconds = 30;
     private String format = FORMAT_TEXT;
+    private Encoder<ILoggingEvent> encoder = null;
 
     public LogzioLogbackAppender() {
         super();
+    }
+
+    public void setEncoder(Encoder<ILoggingEvent> encoder) {
+        this.encoder = encoder;
+    }
+
+    public Encoder<ILoggingEvent> getEncoder() {
+        return encoder;
     }
 
     public String getFormat() {
@@ -344,7 +355,30 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         return value;
     }
 
-    private JsonObject formatMessageAsJson(ILoggingEvent loggingEvent) {
+    private void formatMessageAndSend(ILoggingEvent loggingEvent) {
+        try {
+            logzioSender.send(formatMessageAsJson(loggingEvent));
+        } catch (Exception e) {
+            addWarn("Failed to format json", e);
+        }
+
+    }
+
+    private JsonObject formatMessageAsJson(ILoggingEvent loggingEvent) throws Exception {
+        if (encoder == null) {
+            return formatMessageAsJsonInternal(loggingEvent);
+        }
+        return formatMessageAsJsonExternal(loggingEvent);
+    }
+
+
+    private JsonObject formatMessageAsJsonExternal(ILoggingEvent loggingEvent) throws Exception{
+        final byte[] payload = encoder.encode(loggingEvent);
+        JsonElement jsonElement = gson.fromJson(new String(payload, StandardCharsets.UTF_8), JsonElement.class);
+        return jsonElement.getAsJsonObject();
+    }
+
+    private JsonObject formatMessageAsJsonInternal(ILoggingEvent loggingEvent) {
         JsonObject logMessage;
 
         if (format.equals(FORMAT_JSON)) {
@@ -392,7 +426,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     @Override
     protected void append(ILoggingEvent loggingEvent) {
         if (!loggingEvent.getLoggerName().contains("io.logz.sender")) {
-            logzioSender.send(formatMessageAsJson(loggingEvent));
+            formatMessageAndSend(loggingEvent);
         }
     }
 

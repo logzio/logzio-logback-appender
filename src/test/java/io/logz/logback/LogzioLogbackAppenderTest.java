@@ -2,8 +2,27 @@ package io.logz.logback;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Context;
+import ch.qos.logback.core.encoder.Encoder;
+import ch.qos.logback.core.spi.DeferredProcessingAware;
+import ch.qos.logback.core.status.Status;
+import com.fasterxml.jackson.core.JsonGenerator;
 import io.logz.sender.com.google.gson.Gson;
 import io.logz.test.MockLogzioBulkListener;
+import net.logstash.logback.composite.AbstractFieldJsonProvider;
+import net.logstash.logback.composite.AbstractPatternJsonProvider;
+import net.logstash.logback.composite.CompositeJsonFormatter;
+import net.logstash.logback.composite.FormattedTimestampJsonProvider;
+import net.logstash.logback.composite.JsonProvider;
+import net.logstash.logback.composite.JsonProviders;
+import net.logstash.logback.composite.loggingevent.LogLevelJsonProvider;
+import net.logstash.logback.composite.loggingevent.LoggerNameJsonProvider;
+import net.logstash.logback.composite.loggingevent.LoggingEventFormattedTimestampJsonProvider;
+import net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider;
+import net.logstash.logback.composite.loggingevent.MessageJsonProvider;
+import net.logstash.logback.composite.loggingevent.StackTraceJsonProvider;
+import net.logstash.logback.composite.loggingevent.ThreadNameJsonProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,6 +33,7 @@ import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,6 +43,8 @@ import java.util.concurrent.CountDownLatch;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+
+import net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder;
 
 @RunWith(Parameterized.class)
 public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
@@ -354,6 +376,47 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
         assertThat(logRequest.getStringFieldOrNull("exception")).isEqualTo(expectedException);
+    }
 
+    @Test
+    public void testEncoder() {
+        String token = "testEncoder";
+        String type = "testEncoder" + random(8);
+        String loggerName = "testEncoder" + random(8);
+        int drainTimeout = 1;
+        String message1 = "Just a log - " + random(5);
+
+        LoggingEventCompositeJsonEncoder encoder = new LoggingEventCompositeJsonEncoder();
+        encoder.getProviders().addProvider(new LogLevelJsonProvider());
+        encoder.getProviders().addProvider(new MessageJsonProvider());
+        encoder.getProviders().addProvider(withPattern(String.format("{ \"loglevel\": \"%s\" }", "INFO"), new LoggingEventPatternJsonProvider()));
+        encoder.getProviders().addProvider(withPattern(String.format("{ \"type\": \"%s\" }", type), new LoggingEventPatternJsonProvider()));
+        encoder.getProviders().addProvider(withPattern(String.format("{ \"logger\": \"%s\" }", loggerName), new LoggingEventPatternJsonProvider()));
+        encoder.getProviders().addProvider(withName("timestamp", new LoggingEventFormattedTimestampJsonProvider()));
+
+        logzioLogbackAppender.setEncoder(encoder);
+
+        Logger testLogger = createLogger(logzioLogbackAppender, "testEncoder", type, loggerName, drainTimeout, false, false, null, false);
+        encoder.start();
+
+        testLogger.info(message1);
+
+        sleepSeconds(2 * drainTimeout);
+
+        mockListener.assertNumberOfReceivedMsgs(1);
+        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
+        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
+    }
+
+    private AbstractPatternJsonProvider<ILoggingEvent> withPattern(String pattern,
+                                                                   AbstractPatternJsonProvider<ILoggingEvent> provider) {
+        provider.setPattern(pattern);
+        return provider;
+    }
+
+    private <T extends DeferredProcessingAware> AbstractFieldJsonProvider<T> withName(String name,
+                                                                                      AbstractFieldJsonProvider<T> provider) {
+        provider.setFieldName(name);
+        return provider;
     }
 }
