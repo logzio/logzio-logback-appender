@@ -17,7 +17,7 @@ public class InMemoryTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void validateQueueCapacityLimit() {
+    public void validateQueueCapacity() {
         String token = "verifyCapacityInBytesToken";
         String type = random(8);
         String loggerName = "verifyCapacityInBytes" + random(8);
@@ -37,15 +37,15 @@ public class InMemoryTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void validateQueueLogCountLimit() {
-        String token = "verifyLogCountLimit";
+    public void validateQueueLogCountCapacity() {
+        String token = "verifyLogCountCapacity";
         String type = random(8);
-        String loggerName = "verifyLogCountLimit" + random(8);
+        String loggerName = "verifyLogCountCapacity" + random(8);
         int drainTimeout = 1;
         String message1 = "Testing.." + random(5);
         String message2 = "Don't get here test! ";
 
-        logzioLogbackAppender.setInMemoryLogsCountLimit(1);
+        logzioLogbackAppender.setInMemoryLogsCountCapacity(1);
         Logger testLogger = createLogger(logzioLogbackAppender, token, type, loggerName, drainTimeout, false, false, null, false);
 
         testLogger.info(message1);

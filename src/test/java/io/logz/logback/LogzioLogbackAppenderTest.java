@@ -3,26 +3,16 @@ package io.logz.logback;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.Context;
-import ch.qos.logback.core.encoder.Encoder;
 import ch.qos.logback.core.spi.DeferredProcessingAware;
-import ch.qos.logback.core.status.Status;
-import com.fasterxml.jackson.core.JsonGenerator;
 import io.logz.sender.com.google.gson.Gson;
 import io.logz.test.MockLogzioBulkListener;
 import net.logstash.logback.composite.AbstractFieldJsonProvider;
 import net.logstash.logback.composite.AbstractPatternJsonProvider;
-import net.logstash.logback.composite.CompositeJsonFormatter;
-import net.logstash.logback.composite.FormattedTimestampJsonProvider;
-import net.logstash.logback.composite.JsonProvider;
-import net.logstash.logback.composite.JsonProviders;
 import net.logstash.logback.composite.loggingevent.LogLevelJsonProvider;
-import net.logstash.logback.composite.loggingevent.LoggerNameJsonProvider;
 import net.logstash.logback.composite.loggingevent.LoggingEventFormattedTimestampJsonProvider;
 import net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider;
 import net.logstash.logback.composite.loggingevent.MessageJsonProvider;
-import net.logstash.logback.composite.loggingevent.StackTraceJsonProvider;
-import net.logstash.logback.composite.loggingevent.ThreadNameJsonProvider;
+import net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,7 +23,6 @@ import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,8 +32,6 @@ import java.util.concurrent.CountDownLatch;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-
-import net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder;
 
 @RunWith(Parameterized.class)
 public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {

@@ -5,7 +5,6 @@ import ch.qos.logback.core.Context;
 import io.logz.test.MockLogzioBulkListener;
 import net.logstash.logback.composite.ContextJsonProvider;
 import net.logstash.logback.composite.loggingevent.ArgumentsJsonProvider;
-import net.logstash.logback.composite.loggingevent.LoggingEventFormattedTimestampJsonProvider;
 import net.logstash.logback.composite.loggingevent.LoggingEventJsonProviders;
 import net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider;
 import net.logstash.logback.composite.loggingevent.MdcJsonProvider;

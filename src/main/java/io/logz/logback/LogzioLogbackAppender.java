@@ -39,7 +39,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private static final String EXCEPTION = "exception";
     private static final String FORMAT_TEXT = "text";
     private static final String FORMAT_JSON = "json";
-    private static final int DONT_LIMIT_QUEUE_SPACE = -1;
+    private static final int DONT_LIMIT_CAPACITY = -1;
     private static final int LOWER_PERCENTAGE_FS_SPACE = 1;
     private static final int UPPER_PERCENTAGE_FS_SPACE = 100;
 
@@ -65,7 +65,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private boolean compressRequests = false;
     private boolean inMemoryQueue = false;
     private long inMemoryQueueCapacityBytes = 100 * 1024 * 1024;
-    private long inMemoryLogsCountLimit = DONT_LIMIT_QUEUE_SPACE;
+    private long inMemoryLogsCountCapacity = DONT_LIMIT_CAPACITY;
     private int gcPersistedQueueFilesIntervalSeconds = 30;
     private String format = FORMAT_TEXT;
     private Encoder<ILoggingEvent> encoder = null;
@@ -161,12 +161,12 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         return inMemoryQueueCapacityBytes;
     }
 
-    public void setInMemoryLogsCountLimit(long inMemoryLogsCountLimit) {
-        this.inMemoryLogsCountLimit = inMemoryLogsCountLimit;
+    public void setInMemoryLogsCountCapacity(long inMemoryLogsCountCapacity) {
+        this.inMemoryLogsCountCapacity = inMemoryLogsCountCapacity;
     }
 
     public long getInMemoryLogsCountLimit() {
-        return inMemoryLogsCountLimit;
+        return inMemoryLogsCountCapacity;
     }
 
     public boolean isCompressRequests() { return compressRequests; }
@@ -227,7 +227,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             logzioSenderBuilder
                 .withInMemoryQueue()
                     .setCapacityInBytes(inMemoryQueueCapacityBytes)
-                    .setLogsCountLimit(inMemoryLogsCountLimit)
+                    .setLogsCountLimit(inMemoryLogsCountCapacity)
                 .endInMemoryQueue();
         } else {
             if (!validateFsPercentThreshold()) {
@@ -291,12 +291,12 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     }
 
     private boolean validateInMemoryThresholds() {
-        if (inMemoryQueueCapacityBytes <= 0 && inMemoryQueueCapacityBytes != DONT_LIMIT_QUEUE_SPACE) {
-            addError("inMemoryQueueCapacityBytes should be a non zero integer or -1");
+        if (inMemoryQueueCapacityBytes <= 0 && inMemoryQueueCapacityBytes != DONT_LIMIT_CAPACITY) {
+            addError("inMemoryQueueCapacityBytes should be a non zero integer or " + DONT_LIMIT_CAPACITY);
             return false;
         }
-        if (inMemoryLogsCountLimit <= 0 && inMemoryLogsCountLimit != DONT_LIMIT_QUEUE_SPACE) {
-            addError("inMemoryLogsCountLimit should be a non zero integer or -1");
+        if (inMemoryLogsCountCapacity <= 0 && inMemoryLogsCountCapacity != DONT_LIMIT_CAPACITY) {
+            addError("inMemoryLogsCountCapacity should be a non zero integer or " + DONT_LIMIT_CAPACITY);
             return false;
         }
         return true;
@@ -304,8 +304,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
     private boolean validateFsPercentThreshold() {
         if (!(fileSystemFullPercentThreshold >= LOWER_PERCENTAGE_FS_SPACE && fileSystemFullPercentThreshold <= UPPER_PERCENTAGE_FS_SPACE)) {
-            if (fileSystemFullPercentThreshold != DONT_LIMIT_QUEUE_SPACE) {
-                addError("fileSystemFullPercentThreshold should be a number between 1 and 100, or -1");
+            if (fileSystemFullPercentThreshold != DONT_LIMIT_CAPACITY) {
+                addError("fileSystemFullPercentThreshold should be a number between 1 and 100, or " + DONT_LIMIT_CAPACITY);
                 return false;
             }
         }
