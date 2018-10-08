@@ -312,25 +312,6 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void testTokenAndLogzioUrlFromSystemEnvironment() {
-        String token = System.getenv("JAVA_HOME");
-        String type = "testType" + random(8);
-        String loggerName = "testLogger" + random(8);
-        int drainTimeout = 1;
-
-        String message1 = "Just a log - " + random(5);
-        Logger testLogger = createLogger(logzioLogbackAppender, "$JAVA_HOME", type, loggerName, drainTimeout, false, false, null, false);
-
-        testLogger.info(message1);
-
-        sleepSeconds(2 * drainTimeout);
-
-        mockListener.assertNumberOfReceivedMsgs(1);
-        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
-        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
-    }
-
-    @Test
     public void checkExactStackTrace() throws Exception {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final MyRunner.ExceptionGenerator exceptionGenerator = new MyRunner.ExceptionGenerator();
@@ -363,6 +344,25 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
         assertThat(logRequest.getStringFieldOrNull("exception")).isEqualTo(expectedException);
+    }
+
+    @Test
+    public void testTokenAndLogzioUrlFromSystemEnvironment() {
+        String token = System.getenv("JAVA_HOME");
+        String type = "testType" + random(8);
+        String loggerName = "testLogger" + random(8);
+        int drainTimeout = 1;
+
+        String message1 = "Just a log - " + random(5);
+        Logger testLogger = createLogger(logzioLogbackAppender, "$JAVA_HOME", type, loggerName, drainTimeout, false, false, null, false);
+
+        testLogger.info(message1);
+
+        sleepSeconds(2 * drainTimeout);
+
+        mockListener.assertNumberOfReceivedMsgs(1);
+        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
+        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
     }
 
     @Test

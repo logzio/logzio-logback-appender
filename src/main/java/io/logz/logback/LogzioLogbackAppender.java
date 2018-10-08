@@ -146,7 +146,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     }
 
     public void setInMemoryQueue(boolean inMemoryQueue) {
-        this.inMemoryQueue = true;
+        this.inMemoryQueue = inMemoryQueue;
     }
 
     public boolean isInMemoryQueue() {
