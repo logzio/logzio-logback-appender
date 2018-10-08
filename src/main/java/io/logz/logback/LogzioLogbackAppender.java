@@ -357,25 +357,15 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
     private void formatMessageAndSend(ILoggingEvent loggingEvent) {
         try {
-            logzioSender.send(formatMessageAsJson(loggingEvent));
+            if (encoder == null) {
+                logzioSender.send(formatMessageAsJsonInternal(loggingEvent));
+            } else {
+                logzioSender.send(encoder.encode(loggingEvent));
+            }
         } catch (Exception e) {
-            addWarn("Failed to format json", e);
+            addWarn("Failed to format and send message", e);
         }
 
-    }
-
-    private JsonObject formatMessageAsJson(ILoggingEvent loggingEvent) throws Exception {
-        if (encoder == null) {
-            return formatMessageAsJsonInternal(loggingEvent);
-        }
-        return formatMessageAsJsonExternal(loggingEvent);
-    }
-
-
-    private JsonObject formatMessageAsJsonExternal(ILoggingEvent loggingEvent) throws Exception{
-        final byte[] payload = encoder.encode(loggingEvent);
-        JsonElement jsonElement = gson.fromJson(new String(payload, StandardCharsets.UTF_8), JsonElement.class);
-        return jsonElement.getAsJsonObject();
     }
 
     private JsonObject formatMessageAsJsonInternal(ILoggingEvent loggingEvent) {
