@@ -7,6 +7,7 @@ import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,11 +15,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author MarinaRazumovsky
  */
-public class BaseLogbackAppenderTest {
-
-    private final static Logger logger = LoggerFactory.getLogger(BaseLogbackAppenderTest.class);
-
+public abstract class BaseLogbackAppenderTest {
+    protected final static Logger logger = LoggerFactory.getLogger(BaseLogbackAppenderTest.class);
     protected MockLogzioBulkListener mockListener;
+    protected enum QueueType { DISK, MEMORY }
 
     @Before
     public void startMockListener() throws Exception {
@@ -31,15 +31,37 @@ public class BaseLogbackAppenderTest {
         mockListener.stop();
     }
 
-    protected Logger createLogger(String token, String type, String loggerName, Integer drainTimeout,
-                                  boolean addHostname,boolean line, String additionalFields, boolean compressRequests) {
+    protected void sleepSeconds(int seconds) {
+        logger.info("Sleeping {} [sec]...", seconds);
+        try {
+            Thread.sleep(seconds * 1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
+    protected String random(int numberOfChars) {
+        return UUID.randomUUID().toString().substring(0, numberOfChars-1);
+    }
+
+    protected void assertAdditionalFields(MockLogzioBulkListener.LogRequest logRequest, Map<String, String> additionalFields) {
+        additionalFields.forEach((field, value) -> {
+            String fieldValueInLog = logRequest.getStringFieldOrNull(field);
+            assertThat(fieldValueInLog)
+                    .describedAs("Field '{}' in Log [{}]", field, logRequest.getJsonObject().toString())
+                    .isNotNull()
+                    .isEqualTo(value);
+        });
+    }
+
+    protected Logger createLogger(LogzioLogbackAppender logzioLogbackAppender, String token, String type, String loggerName, Integer drainTimeout,
+                                boolean addHostname, boolean line, String additionalFields,
+                                boolean compressRequests) {
         logger.info("Creating logger {}. token={}, type={}, drainTimeout={}, addHostname={}, line={}, additionalFields={} ",
                 loggerName, token, type, drainTimeout, addHostname, line, additionalFields);
 
         ch.qos.logback.classic.Logger logbackLogger =  (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(loggerName);
         Context logbackContext = logbackLogger.getLoggerContext();
-        LogzioLogbackAppender logzioLogbackAppender = new LogzioLogbackAppender();
         logzioLogbackAppender.setContext(logbackContext);
         logzioLogbackAppender.setToken(token);
         logzioLogbackAppender.setLogzioType(type);
@@ -55,28 +77,14 @@ public class BaseLogbackAppenderTest {
         if (additionalFields != null) {
             logzioLogbackAppender.setAdditionalFields(additionalFields);
         }
+        if (logzioLogbackAppender.getEncoder() != null) {
+            logzioLogbackAppender.getEncoder().setContext(logbackContext);
+            logzioLogbackAppender.getEncoder().start();
+        }
         logzioLogbackAppender.start();
         assertThat(logzioLogbackAppender.isStarted()).isTrue();
         logbackLogger.addAppender(logzioLogbackAppender);
         logbackLogger.setAdditive(false);
         return logbackLogger;
-    }
-
-    protected Logger createLogger(String token, String type, String loggerName, Integer drainTimeout,
-                                  boolean addHostname,boolean line, String additionalFields) {
-        return createLogger(token, type, loggerName, drainTimeout, addHostname, line, additionalFields, false);
-    }
-
-    protected void sleepSeconds(int seconds) {
-        logger.info("Sleeping {} [sec]...", seconds);
-        try {
-            Thread.sleep(seconds * 1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected String random(int numberOfChars) {
-        return UUID.randomUUID().toString().substring(0, numberOfChars-1);
     }
 }

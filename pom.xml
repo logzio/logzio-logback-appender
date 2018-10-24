@@ -36,7 +36,7 @@
     </scm>
 
     <properties>
-        <logzio-sender-version>1.0.10</logzio-sender-version>
+        <logzio-sender-version>1.0.18</logzio-sender-version>
     </properties>
 
     <build>
@@ -179,6 +179,12 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
             <version>9.3.9.M1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>5.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
