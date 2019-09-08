@@ -31,6 +31,10 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
             <level>INFO</level>
         </filter>
     </appender>
+    <root level="debug">
+        <!-- IMPORTANT: This line is required -->
+        <appender-ref ref="LogzioLogbackAppender"/>
+    </root>
 </configuration>
 ```
 
