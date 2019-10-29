@@ -142,7 +142,7 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
- - 1.0.22
+ - 1.0.22 - 1.0.23
    - update logzio-sender version
  - 1.0.21
    - added in memory queue support
