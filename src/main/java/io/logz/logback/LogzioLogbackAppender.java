@@ -164,7 +164,12 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         this.inMemoryLogsCountCapacity = inMemoryLogsCountCapacity;
     }
 
+    @Deprecated
     public long getInMemoryLogsCountLimit() {
+        return inMemoryLogsCountCapacity;
+    }
+
+    public long getInMemoryLogsCountCapacity() {
         return inMemoryLogsCountCapacity;
     }
 
