@@ -127,6 +127,10 @@
                             <pattern>com.google.common</pattern>
                             <shadedPattern>io.logz.logback.com.google.common</shadedPattern>
                         </relocation>
+                        <relocation>
+                            <pattern>io.logz.sender</pattern>
+                            <shadedPattern>io.logz.logback-appender.sender</shadedPattern>
+                        </relocation>
                     </relocations>
                     <filters>
                         <filter>
