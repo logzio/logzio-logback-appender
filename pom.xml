@@ -115,17 +115,11 @@
                 </executions>
                 <configuration>
                     <minimizeJar>true</minimizeJar>
-                    <artifactSet>
-                        <includes>
-                            <include>io.logz.sender:logzio-sender</include>
-                            <include>com.google.guava:guava</include>
-                        </includes>
-                    </artifactSet>
                     <createDependencyReducedPom>false</createDependencyReducedPom>
                     <relocations>
                         <relocation>
-                            <pattern>com.google.common</pattern>
-                            <shadedPattern>io.logz.logback.com.google.common</shadedPattern>
+                            <pattern>com.google</pattern>
+                            <shadedPattern>io.logz.logback.com.google</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>io.logz.sender</pattern>
