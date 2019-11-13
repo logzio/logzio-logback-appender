@@ -8,15 +8,21 @@ This appender sends logs to your [Logz.io](http://logz.io) account, using non-bl
 This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) implementation. All logs are backed up to a local file system before being sent. Once you send a log, it will be enqueued in the queue and 100% non-blocking. There is a background task that will handle the log shipment for you. This jar is an "Uber-Jar" that shades both BigQueue, Gson and Guava to avoid "dependency hell".
 
 ### Installation from maven
-```xml
+```
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
     <version>1.0.23</version>
 </dependency>
+
+<dependency>
+    <groupId>ch.qos.logback</groupId>
+    <artifactId>logback-classic</artifactId>
+    <version>1.2.3</version>
+</dependency>
 ```
 
-### Logback Example Configuration
+### logback.xml Example Configuration
 ```xml
 <!-- Use debug=true here if you want to see output from the appender itself -->
 <!-- Use line=true here if you want to see the line of code that generated this log -->
