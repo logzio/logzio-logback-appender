@@ -12,7 +12,7 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.23</version>
+    <version>1.0.24</version>
 </dependency>
 
 <dependency>
