@@ -395,6 +395,25 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
     }
 
+    @Test
+    public void testDrainQueue() {
+        String token = "drainToken";
+        String type = "drainType" + random(8);
+        String loggerName = "drainLogger" + random(8);
+        int drainTimeout = -1;
+        String message = "Simple log line - "+random(5);
+
+        Logger testLogger = createLogger(logzioLogbackAppender, token, type, loggerName, drainTimeout, false, false, null, false);
+
+        testLogger.info(message);
+        mockListener.assertNumberOfReceivedMsgs(0);
+
+        logzioLogbackAppender.drainQueueAndSend();
+        mockListener.assertNumberOfReceivedMsgs(1);
+        MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message);
+        mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
+    }
+
     private AbstractPatternJsonProvider<ILoggingEvent> withPattern(String pattern,
                                                                    AbstractPatternJsonProvider<ILoggingEvent> provider) {
         provider.setPattern(pattern);

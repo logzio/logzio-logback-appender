@@ -339,6 +339,13 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
                 .build();
     }
 
+    /**
+     * Flush buffers and send accumulated messages to server
+     */
+    public void drainQueueAndSend() {
+        if (logzioSender != null) logzioSender.drainQueueAndSend();
+    }
+
     @Override
     public void stop() {
         if (logzioSender != null) logzioSender.stop();
