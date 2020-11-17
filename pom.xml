@@ -145,11 +145,6 @@
             <version>${logzio-sender-version}</version>
             <exclusions>
                 <exclusion>
-                    <!--
-                        Exclude SLF4j here because this dependency already included in logback-classic with "provided" scope.
-                        If this dependency appears in "runtime" scope it will be put in an uber-jar by the maven-shade-plugin
-                        and causes a clash with classes from the original SLF4j library (probably with a different version).
-                    -->
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
