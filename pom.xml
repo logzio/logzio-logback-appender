@@ -143,6 +143,12 @@
             <groupId>io.logz.sender</groupId>
             <artifactId>logzio-sender</artifactId>
             <version>${logzio-sender-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
