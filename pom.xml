@@ -6,7 +6,7 @@
 
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>0-SNAPSHOT</version>
+    <version>1.0.27</version>
 
     <packaging>jar</packaging>
     <name>Logz.io Logback Appender</name>
@@ -38,7 +38,16 @@
     <properties>
         <logzio-sender-version>1.1.1</logzio-sender-version>
     </properties>
-
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh-nexus</id>
+            <url>https:/oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh-nexus</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
     <build>
         <plugins>
             <plugin>
@@ -93,7 +102,7 @@
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.3</version>
+                <version>1.6.7</version>
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh-nexus</serverId>
@@ -116,24 +125,10 @@
                 <configuration>
                     <minimizeJar>true</minimizeJar>
                     <createDependencyReducedPom>true</createDependencyReducedPom>
-                    <artifactSet>
-                        <includes>
-                            <include>*:*</include>
-                        </includes>
-                        <excludes>
-                            <exclude>ch.qos.logback:*</exclude>
-                            <exclude>org.slf4j:*</exclude>
-                        </excludes>
-                    </artifactSet>
                     <relocations>
                         <relocation>
-                            <pattern></pattern>
-                            <!-- shade everything to the same dir as sender, to avoid duplicate classes -->
-                            <shadedPattern>io.logz.sender.</shadedPattern>
-                            <excludes>
-                                <exclude>%regex[^io.logz.*]</exclude>
-                                <exclude>%regex[^META-INF/.*]</exclude>
-                            </excludes>
+                            <pattern>io.logz.sender</pattern>
+                            <shadedPattern>io.logz.logback-appender.sender</shadedPattern>
                         </relocation>
                     </relocations>
                     <filters>
@@ -151,7 +146,7 @@
                 <artifactId>flatten-maven-plugin</artifactId>
                 <version>1.2.7</version>
                 <configuration>
-                    <flattenMode>clean</flattenMode>
+                    <flattenMode>oss</flattenMode>
                     <updatePomFile>true</updatePomFile>
                 </configuration>
                 <executions>
@@ -171,16 +166,23 @@
             <groupId>io.logz.sender</groupId>
             <artifactId>logzio-sender</artifactId>
             <version>${logzio-sender-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
+            <version>1.2.7</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>25.0-jre</version>
+            <version>30.0-jre</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>

@@ -12,13 +12,13 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.24</version>
+    <version>1.0.27</version>
 </dependency>
 
 <dependency>
     <groupId>ch.qos.logback</groupId>
     <artifactId>logback-classic</artifactId>
-    <version>1.2.3</version>
+    <version>1.2.7</version>
 </dependency>
 ```
 
@@ -148,6 +148,9 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.27
+   - Dependency version bump
+   - Reverted invalid maven shade configuration
  - 1.0.25
    - added ability to flush sender manually
  - 1.0.24
