@@ -12,7 +12,7 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.27</version>
+    <version>1.0.28</version>
 </dependency>
 
 <dependency>
@@ -59,7 +59,7 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 | **line**       | *false*                                    | Print the line of code that generated this log  |
 | **compressRequests**       | *false*                                    | Boolean. `true` if logs are compressed in gzip format before sending. `false` if logs are sent uncompressed. |
 | **format** | *text*  | Optional. `json` if the logged message is to be parsed as a JSON (in such a way that each JSON node will be a field in logz.io) or `text` if the logged message is to be treated as plain text.
-
+| **exceedMaxSizeAction**       | *"cut"*                                    | String. cut to truncate the message field or drop to drop log that exceed the allowed maximum size for logzio. If the log size exceeding the maximum size allowed after truncating the message field, the log will be dropped. |
 #### Parameters for in-memory queue
 | Parameter          | Default                              | Explained  |
 | ------------------ | ------------------------------------ | ----- |
@@ -148,6 +148,8 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.28
+   - Added exceedMaxSizeAction parameter for handling oversized logs 
  - 1.0.27
    - Dependency version bump
    - Reverted invalid maven shade configuration
