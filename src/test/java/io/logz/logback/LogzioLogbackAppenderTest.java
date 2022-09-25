@@ -155,7 +155,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     @Test
     public void existingHostname() throws Exception {
         String token = "checkingHostname";
-        String type = "withOrWithoutHostnamr" + random(8);
+        String type = "withOrWithoutHostname" + random(8);
         String loggerName = "runningOutOfIdeasHere" + random(8);
         int drainTimeout = 1;
         String message1 = "Hostname log - " +  random(5);
@@ -330,7 +330,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String expectedException = "java.lang.RuntimeException: Got NPE!\n" +
                 "\tat io.logz.logback.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:33)\n" +
                 "\tat io.logz.logback.MyRunner.run(MyRunner.java:18)\n" +
-                "\tat java.lang.Thread.run(Thread.java:748)\n" +
+                "\tat java.lang.Thread.run(Thread.java:750)\n" +
                 "Caused by: java.lang.NullPointerException: null\n" +
                 "\tat io.logz.logback.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:31)\n" +
                 "\t... 2 common frames omitted\n";
