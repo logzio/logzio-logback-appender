@@ -36,7 +36,7 @@
     </scm>
 
     <properties>
-        <logzio-sender-version>1.1.5</logzio-sender-version>
+        <logzio-sender-version>1.1.7</logzio-sender-version>
     </properties>
     <distributionManagement>
         <snapshotRepository>

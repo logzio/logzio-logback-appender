@@ -15,6 +15,7 @@ import io.logz.sender.com.google.gson.JsonObject;
 import io.logz.sender.exceptions.LogzioParameterErrorException;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -266,7 +267,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         }
         try {
             logzioSender = logzioSenderBuilder.build();
-        } catch (LogzioParameterErrorException e) {
+        } catch (LogzioParameterErrorException | IOException e) {
             addError("Could not create logzio sender", e);
             return;
         }

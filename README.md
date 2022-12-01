@@ -149,7 +149,8 @@ Will send a log to Logz.io that looks like this:
 
 ### Release notes
  - 1.0.28
-   - Added exceedMaxSizeAction parameter for handling oversized logs 
+   - Added exceedMaxSizeAction parameter for handling oversized logs
+   - Updated LogzioSender version, fixing IndexOutOfBounds error with bigqueue 
  - 1.0.27
    - Dependency version bump
    - Reverted invalid maven shade configuration
