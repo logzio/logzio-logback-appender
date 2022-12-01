@@ -6,7 +6,7 @@
 
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.27</version>
+    <version>1.0.28</version>
 
     <packaging>jar</packaging>
     <name>Logz.io Logback Appender</name>
@@ -36,7 +36,7 @@
     </scm>
 
     <properties>
-        <logzio-sender-version>1.1.1</logzio-sender-version>
+        <logzio-sender-version>1.1.7</logzio-sender-version>
     </properties>
     <distributionManagement>
         <snapshotRepository>
@@ -75,7 +75,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.4</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>

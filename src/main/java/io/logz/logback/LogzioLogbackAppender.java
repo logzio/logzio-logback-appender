@@ -15,6 +15,7 @@ import io.logz.sender.com.google.gson.JsonObject;
 import io.logz.sender.exceptions.LogzioParameterErrorException;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -42,7 +43,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private static final int LOWER_PERCENTAGE_FS_SPACE = 1;
     private static final int UPPER_PERCENTAGE_FS_SPACE = 100;
 
-    private static final Set<String> reservedFields =  new HashSet<>(Arrays.asList(TIMESTAMP,LOGLEVEL, MARKER, MESSAGE,LOGGER,THREAD,EXCEPTION));
+    private static final Set<String> reservedFields = new HashSet<>(Arrays.asList(TIMESTAMP, LOGLEVEL, MARKER, MESSAGE, LOGGER, THREAD, EXCEPTION));
 
     private LogzioSender logzioSender;
     private ThrowableProxyConverter throwableProxyConverter;
@@ -68,6 +69,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private int gcPersistedQueueFilesIntervalSeconds = 30;
     private String format = FORMAT_TEXT;
     private Encoder<ILoggingEvent> encoder = null;
+    private String exceedMaxSizeAction = "cut";
 
     public LogzioLogbackAppender() {
         super();
@@ -96,6 +98,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     public void setLogzioType(String logzioType) {
         this.logzioType = logzioType;
     }
+
 
     public void setDrainTimeoutSec(int drainTimeoutSec) {
         // Basic protection from running negative or zero timeout
@@ -173,24 +176,28 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         return inMemoryLogsCountCapacity;
     }
 
-    public boolean isCompressRequests() { return compressRequests; }
+    public boolean isCompressRequests() {
+        return compressRequests;
+    }
 
-    public void setCompressRequests(boolean compressRequests) { this.compressRequests = compressRequests; }
+    public void setCompressRequests(boolean compressRequests) {
+        this.compressRequests = compressRequests;
+    }
 
     public void setAdditionalFields(String additionalFields) {
-       if (additionalFields != null) {
-           Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
-               if (reservedFields.contains(k)) {
-                   addWarn("The field name '" + k + "' defined in additionalFields configuration can't be used since it's a reserved field name. This field will not be added to the outgoing log messages");
-               } else {
-                   String value = getValueFromSystemEnvironmentIfNeeded(v);
-                   if (value != null) {
-                       additionalFieldsMap.put(k, value);
-                   }
-               }
-           });
-           addInfo("The additional fields that would be added: " + additionalFieldsMap.toString());
-       }
+        if (additionalFields != null) {
+            Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
+                if (reservedFields.contains(k)) {
+                    addWarn("The field name '" + k + "' defined in additionalFields configuration can't be used since it's a reserved field name. This field will not be added to the outgoing log messages");
+                } else {
+                    String value = getValueFromSystemEnvironmentIfNeeded(v);
+                    if (value != null) {
+                        additionalFieldsMap.put(k, value);
+                    }
+                }
+            });
+            addInfo("The additional fields that would be added: " + additionalFieldsMap.toString());
+        }
     }
 
     public boolean isAddHostname() {
@@ -213,6 +220,16 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         this.gcPersistedQueueFilesIntervalSeconds = gcPersistedQueueFilesIntervalSeconds;
     }
 
+    public void setExceedMaxSizeAction(String exceedMaxSizeAction) {
+        if (!Arrays.asList("cut", "drop").contains(exceedMaxSizeAction.toLowerCase())) {
+            addWarn("The value for parameter ExceedMaxSizeAction is invalid, using default: cut");
+            this.exceedMaxSizeAction = "cut";
+        } else {
+
+            this.exceedMaxSizeAction = exceedMaxSizeAction;
+        }
+    }
+
     @Override
     public void start() {
         setHostname();
@@ -229,10 +246,10 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
                 return;
             }
             logzioSenderBuilder
-                .withInMemoryQueue()
+                    .withInMemoryQueue()
                     .setCapacityInBytes(inMemoryQueueCapacityBytes)
                     .setLogsCountLimit(inMemoryLogsCountCapacity)
-                .endInMemoryQueue();
+                    .endInMemoryQueue();
         } else {
             if (!validateFsPercentThreshold()) {
                 return;
@@ -243,14 +260,14 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             }
             logzioSenderBuilder
                     .withDiskQueue()
-                        .setQueueDir(queueDirFile)
-                        .setGcPersistedQueueFilesIntervalSeconds(gcPersistedQueueFilesIntervalSeconds)
-                        .setFsPercentThreshold(fileSystemFullPercentThreshold)
+                    .setQueueDir(queueDirFile)
+                    .setGcPersistedQueueFilesIntervalSeconds(gcPersistedQueueFilesIntervalSeconds)
+                    .setFsPercentThreshold(fileSystemFullPercentThreshold)
                     .endDiskQueue();
         }
         try {
             logzioSender = logzioSenderBuilder.build();
-        } catch (LogzioParameterErrorException e) {
+        } catch (LogzioParameterErrorException | IOException e) {
             addError("Could not create logzio sender", e);
             return;
         }
@@ -265,12 +282,13 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
     private LogzioSender.Builder getSenderBuilder(HttpsRequestConfiguration conf) {
         return LogzioSender
-                    .builder()
-                    .setDebug(debug)
-                    .setDrainTimeoutSec(drainTimeoutSec)
-                    .setHttpsRequestConfiguration(conf)
-                    .setReporter(new StatusReporter())
-                    .setTasksExecutor(context.getScheduledExecutorService());
+                .builder()
+                .setDebug(debug)
+                .setDrainTimeoutSec(drainTimeoutSec)
+                .setHttpsRequestConfiguration(conf)
+                .setReporter(new StatusReporter())
+                .setTasksExecutor(context.getScheduledExecutorService())
+                .setExceedMaxSizeAction(exceedMaxSizeAction);
     }
 
     private File getQueueFile() {
@@ -291,7 +309,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         } else {
             queueDir = System.getProperty("java.io.tmpdir") + File.separator + "logzio-logback-queue" + File.separator + logzioType;
         }
-        return new File(queueDir,"logzio-logback-appender");
+        return new File(queueDir, "logzio-logback-appender");
     }
 
     private boolean validateInMemoryThresholds() {
@@ -401,7 +419,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         }
 
         logMessage.addProperty(TIMESTAMP, new Date(loggingEvent.getTimeStamp()).toInstant().toString());
-        logMessage.addProperty(LOGLEVEL,loggingEvent.getLevel().levelStr);
+        logMessage.addProperty(LOGLEVEL, loggingEvent.getLevel().levelStr);
 
         if (loggingEvent.getMarker() != null) {
             logMessage.addProperty(MARKER, loggingEvent.getMarker().toString());
@@ -460,7 +478,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
 
         @Override
         public void info(String msg, Throwable e) {
-            addInfo(msg,e);
+            addInfo(msg, e);
         }
     }
 
