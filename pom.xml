@@ -6,7 +6,7 @@
 
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.28</version>
+    <version>1.0.29</version>
 
     <packaging>jar</packaging>
     <name>Logz.io Logback Appender</name>
@@ -22,8 +22,8 @@
 
     <developers>
         <developer>
-            <name>Roi Rav-Hon</name>
-            <email>roi@logz.io</email>
+            <name>Tamir Michaeli</name>
+            <email>tamir.michaeli@logz.io</email>
             <organization>Logz.io</organization>
             <organizationUrl>http://logz.io</organizationUrl>
         </developer>
@@ -36,7 +36,7 @@
     </scm>
 
     <properties>
-        <logzio-sender-version>1.1.7</logzio-sender-version>
+        <logzio-sender-version>1.1.8</logzio-sender-version>
     </properties>
     <distributionManagement>
         <snapshotRepository>

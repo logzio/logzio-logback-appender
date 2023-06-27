@@ -148,6 +148,9 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 1.0.29
+   - Updated LogzioSender version to `1.1.8`:
+      - Fix an issue where log is not being truncated properly between size of 32.7k to 500k.
  - 1.0.28
    - Added exceedMaxSizeAction parameter for handling oversized logs
    - Updated LogzioSender version, fixing IndexOutOfBounds error with bigqueue 
