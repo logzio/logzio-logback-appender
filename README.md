@@ -48,7 +48,7 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 | Parameter          | Default                              | Explained  |
 | ------------------ | ------------------------------------ | ----- |
 | **token**              | *None*                                 | Your Logz.io token, which can be found under "settings" in your account, If the value begins with `$` then the appender looks for an environment variable or system property with the name specified. For example: `$LOGZIO_TOKEN` will look for environment variable named `LOGZIO_TOKEN` |
-| **logzioType**               | *java*                                 | The [log type](http://support.logz.io/support/solutions/articles/6000103063-what-is-type-) for that appender, it must not contain spaces |
+| **logzioType**               | *java*                                 | The [log type](https://docs.logz.io/user-guide/log-shipping/built-in-log-types.html) for that appender, it must not contain spaces |
 | **logzioUrl**               | *https://listener.logz.io:8071*                                 | The url that the appender sends to.  If your account is in the EU you must use https://listener-eu.logz.io:8071 |
 | **drainTimeoutSec**       | *5*                                    | How often the appender should drain the queue (in seconds) |
 | **socketTimeout**       | *10 * 1000*                                    | The socket timeout during log shipment |
