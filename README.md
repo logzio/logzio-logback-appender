@@ -12,7 +12,7 @@ This appender uses [LogzioSender](https://github.com/logzio/logzio-java-sender) 
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>1.0.28</version>
+    <version>2.0.0</version>
 </dependency>
 
 <dependency>
@@ -148,9 +148,16 @@ Will send a log to Logz.io that looks like this:
 ```
 
 ### Release notes
+ - 2.0.0 - **THIS IS A SNAPSHOT RELEASE - SUPPORTED WITH JDK 11 AND ABOVE**
+   - Updated LogzioSender version to `2.0.0`:
+     - Fixes an issue where DiskQueue was not clearing disk space when using JDK 11 and above.
  - 1.0.29
    - Updated LogzioSender version to `1.1.8`:
       - Fix an issue where log is not being truncated properly between size of 32.7k to 500k.
+   
+ <details>
+  <summary markdown="span"> Expand to check old versions </summary>
+
  - 1.0.28
    - Added exceedMaxSizeAction parameter for handling oversized logs
    - Updated LogzioSender version, fixing IndexOutOfBounds error with bigqueue 
@@ -204,7 +211,7 @@ Will send a log to Logz.io that looks like this:
    - Add hostname to logs support
  - 1.0.0 - 1.0.2
    - Initial releases
-   
+      </details>
 
 ### Contribution
  - Fork
