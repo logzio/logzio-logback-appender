@@ -28,7 +28,7 @@ JDK 8 and above:
 </dependency>
 ```
 
-Logback appender also requires logback classis:
+Logback appender also requires logback classic:
 ```
 <dependency>
     <groupId>ch.qos.logback</groupId>
