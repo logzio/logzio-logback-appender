@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/logzio/logzio-logback-appender.svg?branch=master)](https://travis-ci.org/logzio/logzio-logback-appender)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.logz.logback/logzio-logback-appender/badge.svg)](http://mvnrepository.com/artifact/io.logz.logback/logzio-logback-appender)
 
 # Logzio logback appender
