@@ -51,10 +51,11 @@ jobs:
       uses: actions/setup-java@v2
       with:
         java-version: 11
-        distribution: 'adopt'
+        distribut   ion: 'adopt'
         
     - name: Import GPG key
       run: |  
+        export GPG_TTY=$(tty)
         openssl aes-256-cbc  -in release/codesigning.asc.enc -out release/codesigning.asc -d -k ${{ secrets.CODESIGNING }}
         gpg --batch --fast-import release/codesigning.asc
         rm release/codesigning.asc
