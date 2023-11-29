@@ -52,8 +52,8 @@ jobs:
 
     - name: Import GPG key
       run: |
-        openssl aes-256-cbc -in release/codesigning.asc.enc -out release/codesigning.asc -d -k ${{ secrets.CODESIGNING }}
-        gpg --fast-import release/codesigning.asc
+        openssl aes-256-cbc -pbkdf2 -in release/codesigning.asc.enc -out release/codesigning.asc -d -k ${{ secrets.CODESIGNING }}
+        gpg --batch --yes --no-tty --fast-import release/codesigning.asc
         rm release/codesigning.asc
 
     - name: Set project version
