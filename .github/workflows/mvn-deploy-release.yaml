@@ -11,7 +11,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    env:
+      OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+      OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+      GPG_KEY: ${{ secrets.GPG_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
     steps:
     - uses: actions/checkout@v2
 
@@ -50,10 +54,9 @@ jobs:
         distribution: 'adopt'
         
     - name: Import GPG key
-      run: |
-        echo GPG_PASSPHRASE=${{ secrets.GPG_PASSPHRASE }} >> $GITHUB_ENV
-        openssl aes-256-cbc -pbkdf2 -in release/codesigning.asc.enc -out release/codesigning.asc -d -k ${{ secrets.CODESIGNING }}
-        gpg --batch --yes --no-tty --fast-import release/codesigning.asc
+      run: |  
+        openssl aes-256-cbc  -in release/codesigning.asc.enc -out release/codesigning.asc -d -k $CODESIGNING
+        gpg --batch --fast-import release/codesigning.asc
         rm release/codesigning.asc
 
     - name: Set project version
