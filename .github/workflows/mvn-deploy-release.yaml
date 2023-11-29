@@ -49,10 +49,9 @@ jobs:
         java-version: 11
         distribution: 'adopt'
         
-
     - name: Import GPG key
       run: |
-        export GPG_TTY=$(tty)      
+        echo GPG_PASSPHRASE=${{ secrets.GPG_PASSPHRASE }} >> $GITHUB_ENV
         openssl aes-256-cbc -pbkdf2 -in release/codesigning.asc.enc -out release/codesigning.asc -d -k ${{ secrets.CODESIGNING }}
         gpg --batch --yes --no-tty --fast-import release/codesigning.asc
         rm release/codesigning.asc
