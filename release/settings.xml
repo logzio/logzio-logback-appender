@@ -10,9 +10,6 @@
     <profiles>
         <profile>
             <id>ossrh-nexus</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <properties>
                 <gpg.executable>gpg</gpg.executable>
                 <gpg.keyname>${env.GPG_KEY}</gpg.keyname>
@@ -20,4 +17,7 @@
             </properties>
         </profile>
     </profiles>
+      <activeProfiles>
+    <activeProfile>ossrh-nexus</activeProfile>
+  </activeProfiles>
 </settings>
