@@ -5,6 +5,10 @@
             <username>${env.OSSRH_USERNAME}</username>
             <password>${env.OSSRH_PASSWORD}</password>
         </server>
+        <server>
+            <id>gpg.passphrase</id>
+            <passphrase>${env.GPG_PASSPHRASE}</passphrase>
+        </server>
     </servers>
 
     <profiles>
@@ -16,7 +20,12 @@
             <properties>
                 <gpg.executable>gpg</gpg.executable>
                 <gpg.keyname>${env.GPG_KEY}</gpg.keyname>
-                <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
+                <gpg.passphrase>server</gpg.passphrase>
+                <gpg.arguments>
+                    <arg>--batch</arg>
+                    <arg>--yes</arg>
+                    <arg>--no-tty</arg>
+                </gpg.arguments>
             </properties>
         </profile>
     </profiles>

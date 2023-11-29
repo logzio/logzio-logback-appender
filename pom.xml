@@ -96,6 +96,13 @@
                         <goals>
                             <goal>sign</goal>
                         </goals>
+                        <configuration>
+                            <gpgArguments>
+                                <arg>--batch</arg>
+                                <arg>--yes</arg>
+                                <arg>--no-tty</arg>
+                            </gpgArguments>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
