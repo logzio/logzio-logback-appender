@@ -1,11 +1,12 @@
-name: Java CI with Maven
+name: Java CI
+
 on:
   push:
     branches: [ master ]
-    tags:
-      - '*'
   pull_request:
     branches: [ master ]
+  release:
+    types: [created]
 
 jobs:
   build:
@@ -14,10 +15,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up JDK 1.8
-      uses: actions/setup-java@v1
+    - name: Set up JDK 11
+      uses: actions/setup-java@v2
       with:
-        java-version: 1.8
+        java-version: 11
 
     - name: Cache Maven packages
       uses: actions/cache@v2
@@ -29,34 +30,34 @@ jobs:
     - name: Install dependencies
       run: ./mvnw install -DskipTests -Dgpg.skip
 
-    - name: Install on branch
-      run: echo "Install on branch $GITHUB_REF"
+    - name: Build and Test
+      if: github.event_name != 'release'
+      run: echo 'Install on ${{ github.ref }}'
 
   deploy:
-    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.ref == 'refs/heads/master'
     needs: build
-    if: github.ref == 'refs/heads/master' && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up JDK 1.8
-      uses: actions/setup-java@v1
+    - name: Set up JDK 11
+      uses: actions/setup-java@v2
       with:
-        java-version: 1.8
-        server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
-        settings-path: ${{ github.workspace }} # location for the settings.xml file
+        java-version: 11
 
-    - name: Decode signing key
+    - name: Import GPG key
       run: |
         openssl aes-256-cbc -in release/codesigning.asc.enc -out release/codesigning.asc -d -k ${{ secrets.CODESIGNING }}
         gpg --fast-import release/codesigning.asc
         rm release/codesigning.asc
 
-    - name: Set version
-      run: ./mvnw versions:set -DnewVersion=${GITHUB_REF/refs\/tags\//}
+    - name: Set project version
+      run: ./mvnw versions:set -DnewVersion=${{ github.ref }}
 
-    - name: Deploy with Maven
-      run: ./mvnw deploy --settings release/settings.xml
+    - name: Deploy
+      run: bash ./mvnw deploy --settings release/settings.xml
 
-    - name: Deployment status
+    - name: Post-deployment step
       run: echo 'Deployed finished successfully'
