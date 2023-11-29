@@ -15,10 +15,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up JDK 11
+    - name: Set up JDK 8
       uses: actions/setup-java@v2
       with:
-        java-version: 11
+        java-version: 8
         distribution: 'adopt'
 
     - name: Cache Maven packages
@@ -36,17 +36,17 @@ jobs:
       run: echo 'Install on ${{ github.ref }}'
 
   deploy:
-    if: github.event_name == 'release' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'release'
     needs: build
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up JDK 11
+    - name: Set up JDK 8
       uses: actions/setup-java@v2
       with:
-        java-version: 11
+        java-version: 8
         distribution: 'adopt'
         
 
