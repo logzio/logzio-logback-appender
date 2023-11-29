@@ -51,7 +51,7 @@ jobs:
       uses: actions/setup-java@v2
       with:
         java-version: 11
-        distribut   ion: 'adopt'
+        distribution: 'adopt'
         
     - name: Import GPG key
       run: |  
