@@ -25,8 +25,8 @@ jobs:
       with:
         java-version: 11
         distribution: 'adopt'
-        gpg-private-key: ${{ secrets.GPG_KEY }} # The GPG key, replace with your secret name if different
-        gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }} # The GPG passphrase, replace with your secret name if different
+        # gpg-private-key: ${{ secrets.GPG_KEY }} # The GPG key, replace with your secret name if different
+        # gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }} # The GPG passphrase, replace with your secret name if different
 
     - name: Cache Maven packages
       uses: actions/cache@v2
@@ -55,13 +55,13 @@ jobs:
       with:
         java-version: 11
         distribution: 'adopt'
-        gpg-private-key: ${{ secrets.GPG_KEY }} # The GPG key, replace with your secret name if different
-        gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }} # The GPG passphrase, replace with your secret name if different
-    - name: Create settings-security.xml
-      run: |
-        echo '<settingsSecurity>' > ~/.m2/settings-security.xml
-        echo "  <master>${{ secrets.MVN_MASTER_PASSWORD }}</master>" >> ~/.m2/settings-security.xml
-        echo '</settingsSecurity>' >> ~/.m2/settings-security.xml            
+        # gpg-private-key: ${{ secrets.GPG_KEY }} # The GPG key, replace with your secret name if different
+        # gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }} # The GPG passphrase, replace with your secret name if different
+    # - name: Create settings-security.xml
+    #   run: |
+    #     echo '<settingsSecurity>' > ~/.m2/settings-security.xml
+    #     echo "  <master>${{ secrets.MVN_MASTER_PASSWORD }}</master>" >> ~/.m2/settings-security.xml
+    #     echo '</settingsSecurity>' >> ~/.m2/settings-security.xml            
 # Remove this step
 # - name: Import GPG key
 #   run: |  
@@ -73,7 +73,7 @@ jobs:
       run: ./mvnw versions:set -DnewVersion=${{ github.ref }}
 
     - name: Deploy
-      run: bash ./mvnw deploy --settings release/settings.xml -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
+      run: bash ./mvnw deploy --settings release/settings.xml
 
 
     - name: Post-deployment step
