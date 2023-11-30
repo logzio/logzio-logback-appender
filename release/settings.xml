@@ -11,10 +11,9 @@
         <profile>
             <id>ossrh-nexus</id>
             <properties>
-                <gpg.executable>gpg</gpg.executable>
+                <gpg.executable>gpg2</gpg.executable>
                 <gpg.keyname>${env.GPG_KEY}</gpg.keyname>
                 <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
-                <gpg.loopback>true</gpg.loopback>
             </properties>
         </profile>
     </profiles>
