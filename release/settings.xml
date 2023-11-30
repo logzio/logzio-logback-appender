@@ -1,28 +1,22 @@
 <settings>
-    <servers>
-        <server>
-            <id>ossrh-nexus</id>
-            <username>${env.OSSRH_USERNAME}</username>
-            <password>${env.OSSRH_PASSWORD}</password>
-        </server>
+  <servers>
     <server>
-        <id>gpg.passphrase</id>
-        <passphrase>${env.GPG_PASSPHRASE}</passphrase> <!-- Add this line -->
-    </server>        
-    </servers>
-
-    <profiles>
-        <profile>
-            <id>ossrh-nexus</id>
-            <properties>
-                <gpg.executable>gpg2</gpg.executable>
-                <gpg.keyname>${env.GPG_KEY}</gpg.keyname>
-                <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
-                <gpg.passphraseServerId>gpg.passphrase</gpg.passphraseServerId> <!-- Add this line -->
-            </properties>
-        </profile>
-    </profiles>
-    <activeProfiles>
-        <activeProfile>ossrh-nexus</activeProfile>
-    </activeProfiles>
+        <id>ossrh-nexus</id>
+        <username>${env.OSSRH_USERNAME}</username>
+        <password>${env.OSSRH_PASSWORD}</password>
+    </server>
+  </servers>
+  <profiles>
+    <profile>
+        <id>ossrh-nexus</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <properties>
+            <gpg.executable>gpg</gpg.executable>
+            <gpg.keyname>${env.GPG_KEY}</gpg.keyname>
+            <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
+        </properties>
+    </profile>
+</profiles>
 </settings>
