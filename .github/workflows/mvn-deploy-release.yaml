@@ -24,6 +24,8 @@ jobs:
       with:
         java-version: 11
         distribution: 'adopt'
+        gpg-private-key: ${{ secrets.GPG_KEY }} # The GPG key, replace with your secret name if different
+        gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }} # The GPG passphrase, replace with your secret name if different
 
     - name: Cache Maven packages
       uses: actions/cache@v2
@@ -52,14 +54,16 @@ jobs:
       with:
         java-version: 11
         distribution: 'adopt'
-        
-    - name: Import GPG key
-      run: |  
-        export GPG_TTY=$(tty)
-        openssl aes-256-cbc  -in release/codesigning.asc.enc -out release/codesigning.asc -d -k ${{ secrets.CODESIGNING }}
-        gpg --batch --no-tty --fast-import release/codesigning.asc
-        rm release/codesigning.asc
-
+        gpg-private-key: ${{ secrets.GPG_KEY }} # The GPG key, replace with your secret name if different
+        gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }} # The GPG passphrase, replace with your secret name if different
+            
+# Remove this step
+# - name: Import GPG key
+#   run: |  
+#     export GPG_TTY=$(tty)
+#     openssl aes-256-cbc  -in release/codesigning.asc.enc -out release/codesigning.asc -d -k ${{ secrets.CODESIGNING }}
+#     gpg --batch --no-tty --fast-import release/codesigning.asc
+#     rm release/codesigning.asc
     - name: Set project version
       run: ./mvnw versions:set -DnewVersion=${{ github.ref }}
 
