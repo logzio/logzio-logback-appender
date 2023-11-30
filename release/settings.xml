@@ -7,7 +7,7 @@
         </server>
         <server>
             <id>gpg.passphrase</id>
-            <passphrase>${env.GPG_PASSPHRASE}</passphrase> <!-- Add this line -->
+            <passphrase>{gxzGzoLiRXsHtwx06wAgY1IqGiPo6CYc2QBkZCAU5O0=}</passphrase> <!-- Add this line -->
         </server>        
     </servers>
 
