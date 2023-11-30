@@ -5,6 +5,10 @@
             <username>${env.OSSRH_USERNAME}</username>
             <password>${env.OSSRH_PASSWORD}</password>
         </server>
+        <server>
+            <id>gpg.passphrase</id>
+            <passphrase>${env.GPG_PASSPHRASE}</passphrase> <!-- Add this line -->
+        </server>        
     </servers>
 
     <profiles>
@@ -14,10 +18,11 @@
                 <gpg.executable>gpg2</gpg.executable>
                 <gpg.keyname>${env.GPG_KEY}</gpg.keyname>
                 <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
+                <gpg.passphraseServerId>gpg.passphrase</gpg.passphraseServerId> <!-- Add this line -->
             </properties>
         </profile>
     </profiles>
-      <activeProfiles>
-    <activeProfile>ossrh-nexus</activeProfile>
-  </activeProfiles>
+    <activeProfiles>
+        <activeProfile>ossrh-nexus</activeProfile>
+    </activeProfiles>
 </settings>
