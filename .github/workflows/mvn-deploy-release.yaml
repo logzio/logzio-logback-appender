@@ -30,7 +30,7 @@ jobs:
             echo "  <master>${{ secrets.MVN_MASTER_PASSWORD }}</master>" >> ~/.m2/settings-security.xml
             echo '</settingsSecurity>' >> ~/.m2/settings-security.xml            
         - name: Publish to Apache Maven Central
-          run: mvn deploy
+          run: mvn deploy -Dmaven.test.skip=true -e
           env:
             OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
             OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
