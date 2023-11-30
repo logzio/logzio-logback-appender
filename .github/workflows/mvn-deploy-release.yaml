@@ -9,63 +9,81 @@ on:
     types: [created]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    env:
-      OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-      OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-      GPG_KEY: ${{ secrets.GPG_KEY }}
-      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-      MVN_MASTER_PASSWORD: ${{ secrets.MVN_MASTER_PASSWORD }}
-    steps:
-    - uses: actions/checkout@v2
+  publish:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - name: Set up Maven Central Repository
+          uses: actions/setup-java@v3
+          with:
+            java-version: '11'
+            distribution: 'temurin'
+            server-id: ossrh
+            server-username: MAVEN_USERNAME
+            server-password: MAVEN_PASSWORD
+        - name: Publish package
+          run: mvn --batch-mode deploy
+          env:
+            MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+            MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
 
-    - name: Set up JDK 11
-      uses: actions/setup-java@v2
-      with:
-        java-version: 11
-        distribution: 'adopt'
+  # build:
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+  #     OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+  #     GPG_KEY: ${{ secrets.GPG_KEY }}
+  #     GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+  #     MVN_MASTER_PASSWORD: ${{ secrets.MVN_MASTER_PASSWORD }}
+  #   steps:
+  #   - uses: actions/checkout@v2
 
-    - name: Cache Maven packages
-      uses: actions/cache@v2
-      with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2
+  #   - name: Set up JDK 11
+  #     uses: actions/setup-java@v2
+  #     with:
+  #       java-version: 11
+  #       distribution: 'adopt'
 
-    - name: Install dependencies
-      run: ./mvnw install -DskipTests -Dgpg.skip
+  #   - name: Cache Maven packages
+  #     uses: actions/cache@v2
+  #     with:
+  #       path: ~/.m2
+  #       key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+  #       restore-keys: ${{ runner.os }}-m2
 
-    - name: Build and Test
-      if: github.event_name != 'release'
-      run: echo 'Install on ${{ github.ref }}'
+  #   - name: Install dependencies
+  #     run: ./mvnw install -DskipTests -Dgpg.skip
 
-  deploy:
-    if: github.event_name == 'release'
-    needs: build
-    runs-on: ubuntu-latest
+  #   - name: Build and Test
+  #     if: github.event_name != 'release'
+  #     run: echo 'Install on ${{ github.ref }}'
 
-    steps:
-    - uses: actions/checkout@v2
+  # deploy:
+  #   if: github.event_name == 'release'
+  #   needs: build
+  #   runs-on: ubuntu-latest
 
-    - name: Set up JDK 11
-      uses: actions/setup-java@v2
-      with:
-        java-version: 11
-        distribution: 'adopt'
+  #   steps:
+  #   - uses: actions/checkout@v2
 
-    - name: Create settings-security.xml
-      run: |
-        echo '<settingsSecurity>' > ~/.m2/settings-security.xml
-        echo "  <master>${{ secrets.MVN_MASTER_PASSWORD }}</master>" >> ~/.m2/settings-security.xml
-        echo '</settingsSecurity>' >> ~/.m2/settings-security.xml            
+  #   - name: Set up JDK 11
+  #     uses: actions/setup-java@v2
+  #     with:
+  #       java-version: 11
+  #       distribution: 'adopt'
 
-    - name: Set project version
-      run: ./mvnw versions:set -DnewVersion=${{ github.ref }}
+  #   - name: Create settings-security.xml
+  #     run: |
+  #       echo '<settingsSecurity>' > ~/.m2/settings-security.xml
+  #       echo "  <master>${{ secrets.MVN_MASTER_PASSWORD }}</master>" >> ~/.m2/settings-security.xml
+  #       echo '</settingsSecurity>' >> ~/.m2/settings-security.xml            
 
-    - name: Deploy
-      run: bash ./mvnw deploy --settings release/settings.xml -DskipTests 
+  #   - name: Set project version
+  #     run: ./mvnw versions:set -DnewVersion=${{ github.ref }}
+
+  #   - name: Deploy
+  #     run: bash ./mvnw deploy --settings release/settings.xml -DskipTests 
 
 
-    - name: Post-deployment step
-      run: echo 'Deployed finished successfully'
+  #   - name: Post-deployment step
+  #     run: echo 'Deployed finished successfully'
