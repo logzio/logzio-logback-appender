@@ -20,10 +20,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up JDK 8
+    - name: Set up JDK 11
       uses: actions/setup-java@v2
       with:
-        java-version: 8
+        java-version: 11
         distribution: 'adopt'
         gpg-private-key: ${{ secrets.GPG_KEY }} # The GPG key, replace with your secret name if different
         gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }} # The GPG passphrase, replace with your secret name if different
@@ -50,10 +50,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up JDK 8
+    - name: Set up JDK 11
       uses: actions/setup-java@v2
       with:
-        java-version: 8
+        java-version: 11
         distribution: 'adopt'
         gpg-private-key: ${{ secrets.GPG_KEY }} # The GPG key, replace with your secret name if different
         gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }} # The GPG passphrase, replace with your secret name if different
@@ -74,6 +74,7 @@ jobs:
 
     - name: Deploy
       run: bash ./mvnw deploy --settings release/settings.xml -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
+
 
     - name: Post-deployment step
       run: echo 'Deployed finished successfully'
