@@ -16,6 +16,7 @@ jobs:
       OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
       GPG_KEY: ${{ secrets.GPG_KEY }}
       GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      MVN_MASTER_PASSWORD: ${{ secrets.MVN_MASTER_PASSWORD }}
     steps:
     - uses: actions/checkout@v2
 
