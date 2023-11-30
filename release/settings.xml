@@ -2,8 +2,8 @@
     <servers>
         <server>
             <id>ossrh-nexus</id>
-            <username>${env.OSSRH_USERNAME}</username>
-            <password>${env.OSSRH_PASSWORD}</password>
+        <username>CZtfifzV</username>
+        <password>{gyOzqV+/BcYHB2tDE+wNB0brjHdPeb4uGeXyzkMuINwwHJKsnP7AEcOKJYtMyjzwIdD9oI3OjfUbeCcZ8PQt+g==}</password>
         </server>
         <server>
             <id>gpg.passphrase</id>
