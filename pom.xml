@@ -97,10 +97,6 @@
                         <arg>--no-tty</arg>
                     </gpgArguments>
                 </configuration>
-                         <arg>--no-tty</arg>
-
-                    </gpgArguments>
-                </configuration>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
