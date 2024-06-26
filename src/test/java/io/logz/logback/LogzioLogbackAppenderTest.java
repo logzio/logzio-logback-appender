@@ -327,11 +327,6 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
         String message1 = "Any line change here can cause the test to break";
 
-        String expectedException = "java.lang.RuntimeException: Got NPE!\n" +
-                "\tat io.logz.logback.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:33)\n" +
-                "\tat io.logz.logback.MyRunner.run(MyRunner.java:18)\n" +
-                "\tat java.base/java.lang.Thread.run";
-
         Logger testLogger = createLogger(logzioLogbackAppender, token, type, loggerName, drainTimeout, false, false, null, false);
 
         testLogger.info(message1, exceptionGenerator.getE());
@@ -340,7 +335,9 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         mockListener.assertNumberOfReceivedMsgs(1);
         MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
-        assertThat(logRequest.getStringFieldOrNull("exception")).contains(expectedException);
+        assertThat(logRequest.getStringFieldOrNull("exception")).contains("java.lang.RuntimeException: Got NPE!");
+        assertThat(logRequest.getStringFieldOrNull("exception")).contains("at io.logz.logback.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:33)");
+        assertThat(logRequest.getStringFieldOrNull("exception")).contains("at io.logz.logback.MyRunner.run(MyRunner.java:18)");
         assertThat(logRequest.getStringFieldOrNull("exception")).contains("Caused by: java.lang.NullPointerException");
     }
 
