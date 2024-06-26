@@ -15,7 +15,7 @@ jobs:
       MVN_MASTER_PASSWORD: ${{ secrets.MVN_MASTER_PASSWORD }}    
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install Java and Maven
         uses: actions/setup-java@v1
         with:
