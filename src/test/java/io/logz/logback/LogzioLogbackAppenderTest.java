@@ -330,8 +330,8 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String expectedException = "java.lang.RuntimeException: Got NPE!\n" +
                 "\tat io.logz.logback.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:33)\n" +
                 "\tat io.logz.logback.MyRunner.run(MyRunner.java:18)\n" +
-                "\tat java.base/java.lang.Thread.run(Thread.java:1583)\n" +
-                "Caused by: java.lang.NullPointerException: Cannot invoke \"String.toString()\" because \"v\" is null\n" +
+                "\tat java.base/java.lang.Thread.run(Thread.java:829)\n" +
+                "Caused by: java.lang.NullPointerException: null\n" +
                 "\tat io.logz.logback.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:31)\n" +
                 "\t... 2 common frames omitted\n";
 
