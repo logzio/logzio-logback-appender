@@ -6,7 +6,7 @@
 
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>2.0.0</version>
+    <version>2.0.1</version>
 
     <packaging>jar</packaging>
     <name>Logz.io Logback Appender</name>
@@ -36,7 +36,7 @@
     </scm>
 
     <properties>
-        <logzio-sender-version>2.0.0</logzio-sender-version>
+        <logzio-sender-version>2.0.1</logzio-sender-version>
     </properties>
     <distributionManagement>
         <snapshotRepository>
@@ -88,7 +88,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.6</version>
+                <version>3.2.4</version>
                 <configuration>
                     <!-- Prevent gpg from using pinentry programs -->
                     <gpgArguments>
@@ -110,7 +110,7 @@
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.7</version>
+                <version>1.7.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh-nexus</serverId>
