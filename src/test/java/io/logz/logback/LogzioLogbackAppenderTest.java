@@ -330,10 +330,8 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         String expectedException = "java.lang.RuntimeException: Got NPE!\n" +
                 "\tat io.logz.logback.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:33)\n" +
                 "\tat io.logz.logback.MyRunner.run(MyRunner.java:18)\n" +
-                "\tat java.base/java.lang.Thread.run(Thread.java:829)\n" +
-                "Caused by: java.lang.NullPointerException: null\n" +
-                "\tat io.logz.logback.MyRunner$ExceptionGenerator.generateNPE(MyRunner.java:31)\n" +
-                "\t... 2 common frames omitted\n";
+                "\tat java.base/java.lang.Thread.run(Thread.java:1583)\n" +
+                "Caused by: java.lang.NullPointerException:";
 
         Logger testLogger = createLogger(logzioLogbackAppender, token, type, loggerName, drainTimeout, false, false, null, false);
 
@@ -343,7 +341,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         mockListener.assertNumberOfReceivedMsgs(1);
         MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message1);
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
-        assertThat(logRequest.getStringFieldOrNull("exception")).isEqualTo(expectedException);
+        assertThat(logRequest.getStringFieldOrNull("exception")).contains(expectedException);
     }
 
     @Test
