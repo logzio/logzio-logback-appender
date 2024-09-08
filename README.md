@@ -162,6 +162,18 @@ Will send a log to Logz.io that looks like this:
 }
 ```
 
+## Build and test locally
+1. clone the repository:
+  ```bash
+  git clone https://github.com/logzio/logzio-logback-appender.git
+  cd logzio-logback-appender
+  ```
+2. build and run tests:
+  ```bash
+  mvn clean compile
+  mvn test
+  ```
+
 ### Release notes
 - 2.0.1
    -  Updated LogzioSender version to `2.0.1`
