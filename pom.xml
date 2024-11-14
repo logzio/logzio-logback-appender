@@ -6,7 +6,7 @@
 
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>2.0.1</version>
+    <version>2.1.0</version>
 
     <packaging>jar</packaging>
     <name>Logz.io Logback Appender</name>
@@ -22,8 +22,8 @@
 
     <developers>
         <developer>
-            <name>Tamir Michaeli</name>
-            <email>tamir.michaeli@logz.io</email>
+            <name>Naama Bendalak</name>
+            <email>naama.bendalak@logz.io</email>
             <organization>Logz.io</organization>
             <organizationUrl>http://logz.io</organizationUrl>
         </developer>
@@ -36,7 +36,7 @@
     </scm>
 
     <properties>
-        <logzio-sender-version>2.0.1</logzio-sender-version>
+        <logzio-sender-version>2.1.0</logzio-sender-version>
     </properties>
     <distributionManagement>
         <snapshotRepository>
@@ -53,7 +53,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.13.0</version>
                 <configuration>
                     <source>11</source>
                     <target>11</target>
@@ -62,7 +62,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -75,7 +75,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.10.0</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -184,19 +184,13 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.7</version>
+            <version>1.5.8</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>30.0-jre</version>
-        </dependency>
-        <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-core</artifactId>
-            <version>3.4.1</version>
-            <scope>test</scope>
+            <version>33.3.0-jre</version>
         </dependency>
         <dependency>
             <groupId>io.logz.sender</groupId>
@@ -207,13 +201,13 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
-            <version>5.2</version>
+            <version>8.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
