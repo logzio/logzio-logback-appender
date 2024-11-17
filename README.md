@@ -14,7 +14,7 @@ JDK 11 and above:
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>2.0.1</version>
+    <version>2.1.0</version>
 </dependency>
 ```
 
@@ -33,7 +33,7 @@ Logback appender also requires logback classic:
 <dependency>
     <groupId>ch.qos.logback</groupId>
     <artifactId>logback-classic</artifactId>
-    <version>1.2.7</version>
+    <version>1.5.12</version>
 </dependency>
 ```
 
@@ -175,6 +175,10 @@ Will send a log to Logz.io that looks like this:
   ```
 
 ### Release notes
+- 2.1.0
+  - Updated LogzioSender version to 2.1.0
+    - Upgrade packages version
+  - Upgrade packages version
 - 2.0.1
    -  Updated LogzioSender version to `2.0.1`
       - Add `User-Agent` header with logz.io information
