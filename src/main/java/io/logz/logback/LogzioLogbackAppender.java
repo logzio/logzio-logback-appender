@@ -70,6 +70,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private String format = FORMAT_TEXT;
     private Encoder<ILoggingEvent> encoder = null;
     private String exceedMaxSizeAction = "cut";
+    private boolean addOpentelemetryContext = true;
 
     public LogzioLogbackAppender() {
         super();
@@ -229,6 +230,12 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             this.exceedMaxSizeAction = exceedMaxSizeAction;
         }
     }
+    public boolean isAddOpentelemetryContext() {
+        return addOpentelemetryContext;
+    }
+    public void setAddOpentelemetryContext(boolean addOpentelemetryContext) {
+        this.addOpentelemetryContext = addOpentelemetryContext;
+    }
 
     @Override
     public void start() {
@@ -288,6 +295,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
                 .setHttpsRequestConfiguration(conf)
                 .setReporter(new StatusReporter())
                 .setTasksExecutor(context.getScheduledExecutorService())
+//                .setWithOpentelemetryContext(addOpentelemetryContext)
                 .setExceedMaxSizeAction(exceedMaxSizeAction);
     }
 
