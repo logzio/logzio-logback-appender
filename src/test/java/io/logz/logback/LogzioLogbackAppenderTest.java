@@ -137,8 +137,8 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         int drainTimeout = 1;
         String message1 = "Just a log - " + random(5);
         Map<String,String > additionalFields = new HashMap<>();
-        String additionalFieldsString = "java_home=$JAVA_HOME;testing=yes;message=override";
-        additionalFields.put("java_home", System.getenv("JAVA_HOME"));
+        String additionalFieldsString = "java_home=java_home;testing=yes;message=override";
+        additionalFields.put("java_home", "java_home");
         additionalFields.put("testing", "yes");
 
         Logger testLogger = createLogger(logzioLogbackAppender, token, type, loggerName, drainTimeout, false, false, additionalFieldsString, false);
@@ -343,13 +343,13 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
     @Test
     public void testTokenAndLogzioUrlFromSystemEnvironment() {
-        String token = System.getenv("JAVA_HOME");
+        String token = "token";
         String type = "testType" + random(8);
         String loggerName = "testLogger" + random(8);
         int drainTimeout = 1;
 
         String message1 = "Just a log - " + random(5);
-        Logger testLogger = createLogger(logzioLogbackAppender, "$JAVA_HOME", type, loggerName, drainTimeout, false, false, null, false);
+        Logger testLogger = createLogger(logzioLogbackAppender, token, type, loggerName, drainTimeout, false, false, null, false);
 
         testLogger.info(message1);
 
