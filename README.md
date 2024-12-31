@@ -77,20 +77,20 @@ Logback appender also requires logback classic:
 | **format**                  | *text*                          | Optional. `json` if the logged message is to be parsed as a JSON (in such a way that each JSON node will be a field in logz.io) or `text` if the logged message is to be treated as plain text.                                                                                                                                                                                                                           |
 | **exceedMaxSizeAction**     | *"cut"*                         | String. cut to truncate the message field or drop to drop log that exceed the allowed maximum size for logzio. If the log size exceeding the maximum size allowed after truncating the message field, the log will be dropped.                                                                                                                                                                                            |
 #### Parameters for in-memory queue
-| Parameter          | Default               | Explained  |
-| ------------------ |-----------------------| ----- |
-| **inMemoryQueueCapacityBytes**       | *1024 * 1024 * 100*   | The amount of memory(bytes) we are allowed to use for the memory queue. If the value is -1 the sender will not limit the queue size.|
-| **inMemoryLogsCountCapacity**       | *-1*                  | Number of logs we are allowed to have in the queue before dropping logs. If the value is -1 the sender will not limit the number of logs allowed.|
-| **inMemoryQueue**       | *false*               | Set to true if the appender uses in memory queue. By default the appender uses disk queue|
+| Parameter                      | Default             | Explained                                                                                                                                         |
+|--------------------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| **inMemoryQueueCapacityBytes** | *1024 * 1024 * 100* | The amount of memory(bytes) we are allowed to use for the memory queue. If the value is -1 the sender will not limit the queue size.              |
+| **inMemoryLogsCountCapacity**  | *-1*                | Number of logs we are allowed to have in the queue before dropping logs. If the value is -1 the sender will not limit the number of logs allowed. |
+| **inMemoryQueue**              | *false*             | Set to true if the appender uses in memory queue. By default the appender uses disk queue                                                         |
 
 
 #### Parameters for disk queue
-| Parameter          | Default                              | Explained  |
-| ------------------ | ------------------------------------ | ----- |
-| **fileSystemFullPercentThreshold** | *98*                                   | The percent of used file system space at which the sender will stop queueing. When we will reach that percentage, the file system in which the queue is stored will drop all new logs until the percentage of used space drops below that threshold. Set to -1 to never stop processing new logs |
-| **gcPersistedQueueFilesIntervalSeconds**       | *30*                                    | How often the disk queue should clean sent logs from disk |
-| **bufferDir**(deprecated, use queueDir)          | *System.getProperty("java.io.tmpdir")* | Where the appender should store the queue |
-| **queueDir**          | *System.getProperty("java.io.tmpdir")* | Where the appender should store the queue |
+| Parameter                                | Default                                | Explained                                                                                                                                                                                                                                                                                        |
+|------------------------------------------|----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **fileSystemFullPercentThreshold**       | *98*                                   | The percent of used file system space at which the sender will stop queueing. When we will reach that percentage, the file system in which the queue is stored will drop all new logs until the percentage of used space drops below that threshold. Set to -1 to never stop processing new logs |
+| **gcPersistedQueueFilesIntervalSeconds** | *30*                                   | How often the disk queue should clean sent logs from disk                                                                                                                                                                                                                                        |
+| **bufferDir**(deprecated, use queueDir)  | *System.getProperty("java.io.tmpdir")* | Where the appender should store the queue                                                                                                                                                                                                                                                        |
+| **queueDir**                             | *System.getProperty("java.io.tmpdir")* | Where the appender should store the queue                                                                                                                                                                                                                                                        |
 
 
 ### Code Example
