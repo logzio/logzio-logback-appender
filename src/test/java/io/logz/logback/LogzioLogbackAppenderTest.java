@@ -90,7 +90,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void simpleAppending() throws Exception {
+    public void simpleAppending() {
         String token = "aBcDeFgHiJkLmNoPqRsT";
         String type = "awesomeType" + random(8);
         String loggerName = "simpleAppending" + random(8);
@@ -110,7 +110,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void simpleGzipAppending() throws Exception {
+    public void simpleGzipAppending() {
         String token = "aBcDeFgHiJkLmNoPqRsTGzIp";
         String type = "awesomeGzipType" + random(8);
         String loggerName = "simpleGzipAppending" + random(8);
@@ -130,7 +130,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
     
     @Test
-    public void validateAdditionalFields() throws Exception {
+    public void validateAdditionalFields() {
         String token = "validatingAdditionalFields";
         String type = "willTryWithOrWithoutEnvironmentVariables" + random(8);
         String loggerName = "additionalLogger" + random(8);
@@ -175,7 +175,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void existingLine() throws Exception {
+    public void existingLine() {
         String token = "checkingLine";
         String type = "withLineType" + random(8);
         String loggerName = "test" + random(8);
@@ -197,7 +197,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void sendException() throws Exception {
+    public void sendException() {
         String token = "checkingExceptions";
         String type = "badType" + random(8);
         String loggerName = "exceptionProducer" + random(8);
@@ -228,7 +228,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void testMDC() throws Exception {
+    public void testMDC() {
         String token = "mdcTokensAreTheBest";
         String type = "mdcType" + random(8);
         String loggerName = "mdcTesting" + random(8);
@@ -254,7 +254,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     }
 
     @Test
-    public void testMarker() throws Exception {
+    public void testMarker() {
         String token = "markerToken";
         String type = "markerType" + random(8);
         String loggerName = "markerTesting" + random(8);
