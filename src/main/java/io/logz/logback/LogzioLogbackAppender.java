@@ -295,7 +295,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
                 .setHttpsRequestConfiguration(conf)
                 .setReporter(new StatusReporter())
                 .setTasksExecutor(context.getScheduledExecutorService())
-//                .setWithOpentelemetryContext(addOpentelemetryContext)
+                .setWithOpentelemetryContext(addOpentelemetryContext)
                 .setExceedMaxSizeAction(exceedMaxSizeAction);
     }
 
