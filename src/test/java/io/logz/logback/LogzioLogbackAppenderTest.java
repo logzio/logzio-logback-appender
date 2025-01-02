@@ -110,7 +110,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         Tracer tracer = openTelemetry.getTracer("test");
         Span span = tracer.spanBuilder("test").startSpan();
         try (Scope scope = span.makeCurrent()) {
-            String message = "Test log with OTel context ";
+            String message = "Test log";
             testLogger.info(message);
             sleepSeconds(drainTimeout * 2);
             MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message);
@@ -136,7 +136,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     @Test
     public void openTelemetryContext_Disabled() {
         String token = "token";
-        String type = "type" ;
+        String type = "type" + random(8);
         String loggerName = "otelLogger" + random(8);
         int drainTimeout = 1;
 
@@ -157,7 +157,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         Span span = tracer.spanBuilder("test").startSpan();
 
         try (Scope scope = span.makeCurrent()) {
-            String message = "Test log with OTel context disabled";
+            String message = "Test log";
             testLogger.info(message);
 
             sleepSeconds(drainTimeout * 2);
