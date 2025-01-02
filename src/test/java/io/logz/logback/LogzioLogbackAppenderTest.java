@@ -6,6 +6,10 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.spi.DeferredProcessingAware;
 import io.logz.sender.com.google.gson.Gson;
 import io.logz.test.MockLogzioBulkListener;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import net.logstash.logback.composite.AbstractFieldJsonProvider;
 import net.logstash.logback.composite.AbstractPatternJsonProvider;
 import net.logstash.logback.composite.loggingevent.LogLevelJsonProvider;
@@ -33,6 +37,10 @@ import java.util.concurrent.CountDownLatch;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Scope;
+
+
 @RunWith(Parameterized.class)
 public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
     private LogzioLogbackAppender logzioLogbackAppender;
@@ -59,6 +67,122 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         this.queueType = queueType;
     }
 
+    /**
+     * Initializes the OpenTelemetry SDK with a logging span exporter and the W3C Trace Context
+     * propagator.
+     *
+     * @return A ready-to-use {@link OpenTelemetry} instance.
+     */
+    protected OpenTelemetry initOpenTelemetry() {
+        SdkTracerProvider sdkTracerProvider =
+                SdkTracerProvider.builder()
+                        .build();
+
+        OpenTelemetrySdk sdk =
+                OpenTelemetrySdk.builder()
+                        .setTracerProvider(sdkTracerProvider)
+                        .build();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(sdkTracerProvider::close));
+        return sdk;
+    }
+
+    @Test
+    public void openTelemetryContext_Enabled() {
+        String token = "token";
+        String type = "type" + random(8);
+        String loggerName = "otelLogger" + random(8);
+        int drainTimeout = 1;
+        logzioLogbackAppender.setAddOpentelemetryContext(true);
+        Logger testLogger = createLogger(
+                logzioLogbackAppender,
+                token,
+                type,
+                loggerName,
+                drainTimeout,
+                false,
+                false,
+                null,
+                false
+        );
+
+        OpenTelemetry openTelemetry = initOpenTelemetry();
+        Tracer tracer = openTelemetry.getTracer("test");
+        Span span = tracer.spanBuilder("test").startSpan();
+        try (Scope scope = span.makeCurrent()) {
+            String message = "Simple log line - "+random(5);
+            testLogger.info(message);
+            sleepSeconds(drainTimeout * 2);
+            MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message);
+            mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
+            String traceId = logRequest.getStringFieldOrNull("trace_id");
+            String spanId = logRequest.getStringFieldOrNull("span_id");
+            String serviceName = logRequest.getStringFieldOrNull("service_name");
+
+            assertThat(traceId)
+                    .as("Check 'trace_id' is present when addOpentelemetryContext=true")
+                    .isNotNull();
+            assertThat(spanId)
+                    .as("Check 'span_id' is present when addOpentelemetryContext=true")
+                    .isNotNull();
+            assertThat(serviceName)
+                    .as("Check 'service_name' is present when addOpentelemetryContext=true")
+                    .isNotNull();
+        } finally {
+            span.end();
+        }
+    }
+
+    @Test
+    public void openTelemetryContext_Disabled() {
+        String token = "token";
+        String type = "type" + random(8);
+        String loggerName = "otelLogger" + random(8);
+        int drainTimeout = 1;
+
+        logzioLogbackAppender.setAddOpentelemetryContext(false);
+        Logger testLogger = createLogger(
+                logzioLogbackAppender,
+                token,
+                type,
+                loggerName,
+                drainTimeout,
+                false,
+                false,
+                null,
+                false
+        );
+        OpenTelemetry openTelemetry = initOpenTelemetry();
+        Tracer tracer = openTelemetry.getTracer("test");
+        Span span = tracer.spanBuilder("test").startSpan();
+
+        try (Scope scope = span.makeCurrent()) {
+            String message = "Simple log line - "+random(5);
+            testLogger.info(message);
+
+            sleepSeconds(drainTimeout * 2);
+
+            mockListener.assertNumberOfReceivedMsgs(1);
+            MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message);
+            mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
+
+            String traceId = logRequest.getStringFieldOrNull("trace_id");
+            String spanId = logRequest.getStringFieldOrNull("span_id");
+            String serviceName = logRequest.getStringFieldOrNull("service_name");
+
+            assertThat(traceId)
+                    .as("Check 'trace_id' should NOT be present when addOpentelemetryContext=false")
+                    .isNull();
+            assertThat(spanId)
+                    .as("Check 'span_id' should NOT be present when addOpentelemetryContext=false")
+                    .isNull();
+            assertThat(serviceName)
+                    .as("Check 'service_name' should NOT be present when addOpentelemetryContext=false")
+                    .isNull();
+        } finally {
+            span.end();
+        }
+    }
     @Test
     public void validateJsonMessage(){
         String token = "validateJsonMessageToken";
@@ -137,8 +261,8 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         int drainTimeout = 1;
         String message1 = "Just a log - " + random(5);
         Map<String,String > additionalFields = new HashMap<>();
-        String additionalFieldsString = "java_home=$JAVA_HOME;testing=yes;message=override";
-        additionalFields.put("java_home", System.getenv("JAVA_HOME"));
+        String additionalFieldsString = "java_home=java_home;testing=yes;message=override";
+        additionalFields.put("java_home", "java_home");
         additionalFields.put("testing", "yes");
 
         Logger testLogger = createLogger(logzioLogbackAppender, token, type, loggerName, drainTimeout, false, false, additionalFieldsString, false);
@@ -343,13 +467,13 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
     @Test
     public void testTokenAndLogzioUrlFromSystemEnvironment() {
-        String token = System.getenv("JAVA_HOME");
+        String token = "token";
         String type = "testType" + random(8);
         String loggerName = "testLogger" + random(8);
         int drainTimeout = 1;
 
         String message1 = "Just a log - " + random(5);
-        Logger testLogger = createLogger(logzioLogbackAppender, "$JAVA_HOME", type, loggerName, drainTimeout, false, false, null, false);
+        Logger testLogger = createLogger(logzioLogbackAppender, token, type, loggerName, drainTimeout, false, false, null, false);
 
         testLogger.info(message1);
 
