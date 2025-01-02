@@ -33,7 +33,7 @@ Logback appender also requires logback classic:
 <dependency>
     <groupId>ch.qos.logback</groupId>
     <artifactId>logback-classic</artifactId>
-    <version>1.2.7</version>
+    <version>1.5.12</version>
 </dependency>
 ```
 
@@ -194,10 +194,14 @@ If you're sending traces with OpenTelemetry instrumentation (auto or manual), yo
   ```
 
 ### Release notes
- - 2.1.0
+ - 2.2.0
     -  Updated LogzioSender version to `2.2.0`
         - Add `addOpentelemetryContext` option, to add `trace_id`, `span_id`, `service_name` fields to logs when opentelemetry context is available.
- - 2.0.1
+- 2.1.0
+  - Updated LogzioSender version to 2.1.0
+    - Upgrade packages version
+  - Upgrade packages version
+- 2.0.1
    -  Updated LogzioSender version to `2.0.1`
       - Add `User-Agent` header with logz.io information
  - 2.0.0 - **THIS IS A SNAPSHOT RELEASE - SUPPORTED WITH JDK 11 AND ABOVE**
