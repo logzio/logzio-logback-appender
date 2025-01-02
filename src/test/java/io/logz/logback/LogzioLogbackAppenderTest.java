@@ -110,7 +110,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         Tracer tracer = openTelemetry.getTracer("test");
         Span span = tracer.spanBuilder("test").startSpan();
         try (Scope scope = span.makeCurrent()) {
-            String message = "Test log";
+            String message = "Simple log line - "+random(5);
             testLogger.info(message);
             sleepSeconds(drainTimeout * 2);
             MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message);
@@ -157,7 +157,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         Span span = tracer.spanBuilder("test").startSpan();
 
         try (Scope scope = span.makeCurrent()) {
-            String message = "Test log";
+            String message = "Simple log line - "+random(5);
             testLogger.info(message);
 
             sleepSeconds(drainTimeout * 2);
