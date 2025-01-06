@@ -14,7 +14,7 @@ JDK 11 and above:
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 
@@ -60,36 +60,37 @@ Logback appender also requires logback classic:
 ```
 
 ### Parameters
-| Parameter          | Default                              | Explained  |
-| ------------------ | ------------------------------------ | ----- |
-| **token**              | *None*                                 | Your Logz.io token, which can be found under "settings" in your account, If the value begins with `$` then the appender looks for an environment variable or system property with the name specified. For example: `$LOGZIO_TOKEN` will look for environment variable named `LOGZIO_TOKEN` |
-| **logzioType**               | *java*                                 | The [log type](https://docs.logz.io/user-guide/log-shipping/built-in-log-types.html) for that appender, it must not contain spaces |
-| **logzioUrl**               | *https://listener.logz.io:8071*                                 | The url that the appender sends to.  If your account is in the EU you must use https://listener-eu.logz.io:8071 |
-| **drainTimeoutSec**       | *5*                                    | How often the appender should drain the queue (in seconds) |
-| **socketTimeout**       | *10 * 1000*                                    | The socket timeout during log shipment |
-| **connectTimeout**       | *10 * 1000*                                    | The connection timeout during log shipment |
-| **addHostname**       | *false*                                    | Optional. If true, then a field named 'hostname' will be added holding the host name of the machine. If from some reason there's no defined hostname, this field won't be added |
-| **additionalFields**       | *None*                                    | Optional. Allows to add additional fields to the JSON message sent. The format is "fieldName1=fieldValue1;fieldName2=fieldValue2". You can optionally inject an environment variable value using the following format: "fieldName1=fieldValue1;fieldName2=$ENV_VAR_NAME". In that case, the environment variable should be the only value. In case the environment variable can't be resolved, the field will be omitted. |
-| **debug**       | *false*                                    | Print some debug messages to stdout to help to diagnose issues |
-| **line**       | *false*                                    | Print the line of code that generated this log  |
-| **compressRequests**       | *false*                                    | Boolean. `true` if logs are compressed in gzip format before sending. `false` if logs are sent uncompressed. |
-| **format** | *text*  | Optional. `json` if the logged message is to be parsed as a JSON (in such a way that each JSON node will be a field in logz.io) or `text` if the logged message is to be treated as plain text.
-| **exceedMaxSizeAction**       | *"cut"*                                    | String. cut to truncate the message field or drop to drop log that exceed the allowed maximum size for logzio. If the log size exceeding the maximum size allowed after truncating the message field, the log will be dropped. |
+| Parameter                   | Default                         | Explained                                                                                                                                                                                                                                                                                                                                                                                                                 |
+|-----------------------------|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **token**                   | *None*                          | Your Logz.io token, which can be found under "settings" in your account, If the value begins with `$` then the appender looks for an environment variable or system property with the name specified. For example: `$LOGZIO_TOKEN` will look for environment variable named `LOGZIO_TOKEN`                                                                                                                                |
+| **logzioType**              | *java*                          | The [log type](https://docs.logz.io/user-guide/log-shipping/built-in-log-types.html) for that appender, it must not contain spaces                                                                                                                                                                                                                                                                                        |
+| **logzioUrl**               | *https://listener.logz.io:8071* | The url that the appender sends to.  If your account is in the EU you must use https://listener-eu.logz.io:8071                                                                                                                                                                                                                                                                                                           |
+| **drainTimeoutSec**         | *5*                             | How often the appender should drain the queue (in seconds)                                                                                                                                                                                                                                                                                                                                                                |
+| **socketTimeout**           | *10 * 1000*                     | The socket timeout during log shipment                                                                                                                                                                                                                                                                                                                                                                                    |
+| **connectTimeout**          | *10 * 1000*                     | The connection timeout during log shipment                                                                                                                                                                                                                                                                                                                                                                                |
+| **addHostname**             | *false*                         | Optional. If true, then a field named 'hostname' will be added holding the host name of the machine. If from some reason there's no defined hostname, this field won't be added                                                                                                                                                                                                                                           |
+| **additionalFields**        | *None*                          | Optional. Allows to add additional fields to the JSON message sent. The format is "fieldName1=fieldValue1;fieldName2=fieldValue2". You can optionally inject an environment variable value using the following format: "fieldName1=fieldValue1;fieldName2=$ENV_VAR_NAME". In that case, the environment variable should be the only value. In case the environment variable can't be resolved, the field will be omitted. |
+| **addOpentelemetryContext** | *true*                          | Optional. Add `trace_id`, `span_id`, `service_name` fields to logs when opentelemetry context is available.                                                                                                                                                                                                                                                                                                               |
+| **debug**                   | *false*                         | Print some debug messages to stdout to help to diagnose issues                                                                                                                                                                                                                                                                                                                                                            |
+| **line**                    | *false*                         | Print the line of code that generated this log                                                                                                                                                                                                                                                                                                                                                                            |
+| **compressRequests**        | *false*                         | Boolean. `true` if logs are compressed in gzip format before sending. `false` if logs are sent uncompressed.                                                                                                                                                                                                                                                                                                              |
+| **format**                  | *text*                          | Optional. `json` if the logged message is to be parsed as a JSON (in such a way that each JSON node will be a field in logz.io) or `text` if the logged message is to be treated as plain text.                                                                                                                                                                                                                           |
+| **exceedMaxSizeAction**     | *"cut"*                         | String. cut to truncate the message field or drop to drop log that exceed the allowed maximum size for logzio. If the log size exceeding the maximum size allowed after truncating the message field, the log will be dropped.                                                                                                                                                                                            |
 #### Parameters for in-memory queue
-| Parameter          | Default                              | Explained  |
-| ------------------ | ------------------------------------ | ----- |
-| **inMemoryQueueCapacityBytes**       | *1024 * 1024 * 100*                                | The amount of memory(bytes) we are allowed to use for the memory queue. If the value is -1 the sender will not limit the queue size.|
-| **inMemoryLogsCountCapacity**       | *-1*                                | Number of logs we are allowed to have in the queue before dropping logs. If the value is -1 the sender will not limit the number of logs allowed.|
-| **inMemoryQueue**       | *false*                                | Set to true if the appender uses in memory queue. By default the appender uses disk queue|
+| Parameter                      | Default             | Explained                                                                                                                                         |
+|--------------------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| **inMemoryQueueCapacityBytes** | *1024 * 1024 * 100* | The amount of memory(bytes) we are allowed to use for the memory queue. If the value is -1 the sender will not limit the queue size.              |
+| **inMemoryLogsCountCapacity**  | *-1*                | Number of logs we are allowed to have in the queue before dropping logs. If the value is -1 the sender will not limit the number of logs allowed. |
+| **inMemoryQueue**              | *false*             | Set to true if the appender uses in memory queue. By default the appender uses disk queue                                                         |
 
 
 #### Parameters for disk queue
-| Parameter          | Default                              | Explained  |
-| ------------------ | ------------------------------------ | ----- |
-| **fileSystemFullPercentThreshold** | *98*                                   | The percent of used file system space at which the sender will stop queueing. When we will reach that percentage, the file system in which the queue is stored will drop all new logs until the percentage of used space drops below that threshold. Set to -1 to never stop processing new logs |
-| **gcPersistedQueueFilesIntervalSeconds**       | *30*                                    | How often the disk queue should clean sent logs from disk |
-| **bufferDir**(deprecated, use queueDir)          | *System.getProperty("java.io.tmpdir")* | Where the appender should store the queue |
-| **queueDir**          | *System.getProperty("java.io.tmpdir")* | Where the appender should store the queue |
+| Parameter                                | Default                                | Explained                                                                                                                                                                                                                                                                                        |
+|------------------------------------------|----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **fileSystemFullPercentThreshold**       | *98*                                   | The percent of used file system space at which the sender will stop queueing. When we will reach that percentage, the file system in which the queue is stored will drop all new logs until the percentage of used space drops below that threshold. Set to -1 to never stop processing new logs |
+| **gcPersistedQueueFilesIntervalSeconds** | *30*                                   | How often the disk queue should clean sent logs from disk                                                                                                                                                                                                                                        |
+| **bufferDir**(deprecated, use queueDir)  | *System.getProperty("java.io.tmpdir")* | Where the appender should store the queue                                                                                                                                                                                                                                                        |
+| **queueDir**                             | *System.getProperty("java.io.tmpdir")* | Where the appender should store the queue                                                                                                                                                                                                                                                        |
 
 
 ### Code Example
@@ -162,6 +163,24 @@ Will send a log to Logz.io that looks like this:
 }
 ```
 
+## Add opentelemetry context
+If you're sending traces with OpenTelemetry instrumentation (auto or manual), you can correlate your logs with the trace context. That way, your logs will have traces data in it, such as service name, span id and trace id (version >= `2.2.0`). This feature is enabled by default, To disable it, set the `addOpentelemetryContext` option in your configuration to `false`, like in this example:
+
+```xml
+<configuration>
+   <appender name="LogzioLogbackAppender" class="io.logz.logback.LogzioLogbackAppender">
+      <token>yourlogziopersonaltokenfromsettings</token>
+      <logzioType>myAwesomeType</logzioType>
+      <logzioUrl>https://listener.logz.io:8071</logzioUrl>
+      <addOpentelemetryContext>false</addOpentelemetryContext>
+   </appender>
+   <root level="debug">
+      <!-- IMPORTANT: This line is required -->
+      <appender-ref ref="LogzioLogbackAppender"/>
+   </root>
+</configuration>
+```
+
 ## Build and test locally
 1. Clone the repository:
   ```bash
@@ -175,6 +194,9 @@ Will send a log to Logz.io that looks like this:
   ```
 
 ### Release notes
+ - 2.2.0
+    -  Updated LogzioSender version to `2.2.0`
+        - Add `addOpentelemetryContext` option, to add `trace_id`, `span_id`, `service_name` fields to logs when opentelemetry context is available.
 - 2.1.0
   - Updated LogzioSender version to 2.1.0
     - Upgrade packages version
