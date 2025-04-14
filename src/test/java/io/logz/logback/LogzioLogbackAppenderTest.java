@@ -533,6 +533,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
         mockListener.assertNumberOfReceivedMsgs(0);
 
         logzioLogbackAppender.drainQueueAndSend();
+        sleepSeconds(1);
         mockListener.assertNumberOfReceivedMsgs(1);
         MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message);
         mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
@@ -552,7 +553,7 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
 
     @Test
     public void testCustomExecutor() throws InterruptedException {
-        String token = "customExecutorToken";
+        String token = "customExecutorToken"  + random(8);;
         String type = "customExecutorType" + random(8);
         String loggerName = "customExecutorLogger" + random(8);
         int drainTimeout = 2;
