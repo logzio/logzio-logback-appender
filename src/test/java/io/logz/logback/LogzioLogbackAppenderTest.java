@@ -33,6 +33,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -543,5 +548,62 @@ public class LogzioLogbackAppenderTest extends BaseLogbackAppenderTest {
                                                                                       AbstractFieldJsonProvider<T> provider) {
         provider.setFieldName(name);
         return provider;
+    }
+
+    @Test
+    public void testCustomExecutor() throws InterruptedException {
+        String token = "customExecutorToken";
+        String type = "customExecutorType" + random(8);
+        String loggerName = "customExecutorLogger" + random(8);
+        int drainTimeout = 2;
+        String message = "Testing custom executor - " + random(5);
+
+        ThreadFactory threadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("my-custom-logzio-sender-%d")
+                .setDaemon(true)
+                .build();
+        ScheduledExecutorService customExecutor = Executors.newScheduledThreadPool(2, threadFactory); // Example: Pool with 2 threads
+
+        try {
+            this.logzioLogbackAppender.setExecutor(customExecutor);
+            assertThat(this.logzioLogbackAppender.isStarted()).isFalse();
+
+            Logger testLogger = createLogger(
+                    this.logzioLogbackAppender,
+                    token,
+                    type,
+                    loggerName,
+                    drainTimeout, 
+                    false,  
+                    false,
+                    null,
+                    false
+            );
+
+            testLogger.info(message);
+
+            sleepSeconds(drainTimeout * 2);
+
+            mockListener.assertNumberOfReceivedMsgs(1);
+            MockLogzioBulkListener.LogRequest logRequest = mockListener.assertLogReceivedByMessage(message);
+            mockListener.assertLogReceivedIs(logRequest, token, type, loggerName, Level.INFO.levelStr);
+
+            logzioLogbackAppender.stop();
+            assertThat(customExecutor.isShutdown())
+                    .describedAs("Custom executor should NOT be shut down by appender stop()")
+                    .isFalse();
+            assertThat(customExecutor.isTerminated())
+                    .describedAs("Custom executor should NOT be terminated by appender stop()")
+                    .isFalse();
+
+        } finally {
+            if (customExecutor != null) {
+                customExecutor.shutdown();
+                if (!customExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    System.err.println("Custom executor did not terminate gracefully, forcing shutdown.");
+                    customExecutor.shutdownNow();
+                }
+            }
+        }
     }
 }

@@ -13,6 +13,7 @@ import io.logz.sender.com.google.gson.Gson;
 import io.logz.sender.com.google.gson.JsonElement;
 import io.logz.sender.com.google.gson.JsonObject;
 import io.logz.sender.exceptions.LogzioParameterErrorException;
+import java.util.concurrent.ScheduledExecutorService;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +44,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private static final int LOWER_PERCENTAGE_FS_SPACE = 1;
     private static final int UPPER_PERCENTAGE_FS_SPACE = 100;
 
-    private static final Set<String> reservedFields = new HashSet<>(Arrays.asList(TIMESTAMP, LOGLEVEL, MARKER, MESSAGE, LOGGER, THREAD, EXCEPTION));
+    private static final Set<String> reservedFields = new HashSet<>(
+            Arrays.asList(TIMESTAMP, LOGLEVEL, MARKER, MESSAGE, LOGGER, THREAD, EXCEPTION));
 
     private LogzioSender logzioSender;
     private ThrowableProxyConverter throwableProxyConverter;
@@ -71,6 +73,7 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     private Encoder<ILoggingEvent> encoder = null;
     private String exceedMaxSizeAction = "cut";
     private boolean addOpentelemetryContext = true;
+    private ScheduledExecutorService customExecutorService = null;
 
     public LogzioLogbackAppender() {
         super();
@@ -100,12 +103,12 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         this.logzioType = logzioType;
     }
 
-
     public void setDrainTimeoutSec(int drainTimeoutSec) {
         // Basic protection from running negative or zero timeout
         if (drainTimeoutSec < 1) {
             this.drainTimeoutSec = 1;
-            addInfo("Got unsupported drain timeout " + drainTimeoutSec + ". The timeout must be number greater then 1. I have set to 1 as fallback.");
+            addInfo("Got unsupported drain timeout " + drainTimeoutSec
+                    + ". The timeout must be number greater then 1. I have set to 1 as fallback.");
         } else {
             this.drainTimeoutSec = drainTimeoutSec;
         }
@@ -189,7 +192,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
         if (additionalFields != null) {
             Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(additionalFields).forEach((k, v) -> {
                 if (reservedFields.contains(k)) {
-                    addWarn("The field name '" + k + "' defined in additionalFields configuration can't be used since it's a reserved field name. This field will not be added to the outgoing log messages");
+                    addWarn("The field name '" + k
+                            + "' defined in additionalFields configuration can't be used since it's a reserved field name. This field will not be added to the outgoing log messages");
                 } else {
                     String value = getValueFromSystemEnvironmentIfNeeded(v);
                     if (value != null) {
@@ -230,11 +234,18 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             this.exceedMaxSizeAction = exceedMaxSizeAction;
         }
     }
+
     public boolean isAddOpentelemetryContext() {
         return addOpentelemetryContext;
     }
+
     public void setAddOpentelemetryContext(boolean addOpentelemetryContext) {
         this.addOpentelemetryContext = addOpentelemetryContext;
+    }
+
+    public void setExecutor(ScheduledExecutorService executor) {
+        addInfo("Setting custom ScheduledExecutorService provided via configuration: " + executor);
+        this.customExecutorService = executor;
     }
 
     @Override
@@ -288,15 +299,24 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     }
 
     private LogzioSender.Builder getSenderBuilder(HttpsRequestConfiguration conf) {
-        return LogzioSender
+        LogzioSender.Builder builder = LogzioSender
                 .builder()
                 .setDebug(debug)
                 .setDrainTimeoutSec(drainTimeoutSec)
                 .setHttpsRequestConfiguration(conf)
                 .setReporter(new StatusReporter())
-                .setTasksExecutor(context.getScheduledExecutorService())
                 .setWithOpentelemetryContext(addOpentelemetryContext)
                 .setExceedMaxSizeAction(exceedMaxSizeAction);
+
+        if (this.customExecutorService != null) {
+            addInfo("Using custom ScheduledExecutorService for LogzioSender task execution.");
+            builder.setTasksExecutor(this.customExecutorService);
+        } else {
+            addInfo("No custom ScheduledExecutorService provided, using default Logback context ExecutorService.");
+            builder.setTasksExecutor(context.getScheduledExecutorService());
+        }
+
+        return builder;
     }
 
     private File getQueueFile() {
@@ -315,7 +335,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
                 }
             }
         } else {
-            queueDir = System.getProperty("java.io.tmpdir") + File.separator + "logzio-logback-queue" + File.separator + logzioType;
+            queueDir = System.getProperty("java.io.tmpdir") + File.separator + "logzio-logback-queue" + File.separator
+                    + logzioType;
         }
         return new File(queueDir, "logzio-logback-appender");
     }
@@ -333,9 +354,11 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
     }
 
     private boolean validateFsPercentThreshold() {
-        if (!(fileSystemFullPercentThreshold >= LOWER_PERCENTAGE_FS_SPACE && fileSystemFullPercentThreshold <= UPPER_PERCENTAGE_FS_SPACE)) {
+        if (!(fileSystemFullPercentThreshold >= LOWER_PERCENTAGE_FS_SPACE
+                && fileSystemFullPercentThreshold <= UPPER_PERCENTAGE_FS_SPACE)) {
             if (fileSystemFullPercentThreshold != DONT_LIMIT_CAPACITY) {
-                addError("fileSystemFullPercentThreshold should be a number between 1 and 100, or " + DONT_LIMIT_CAPACITY);
+                addError("fileSystemFullPercentThreshold should be a number between 1 and 100, or "
+                        + DONT_LIMIT_CAPACITY);
                 return false;
             }
         }
@@ -349,7 +372,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
                 additionalFieldsMap.put("hostname", hostname);
             }
         } catch (UnknownHostException e) {
-            addWarn("The configuration addHostName was specified but the host could not be resolved, thus the field 'hostname' will not be added", e);
+            addWarn("The configuration addHostName was specified but the host could not be resolved, thus the field 'hostname' will not be added",
+                    e);
         }
     }
 
@@ -369,13 +393,16 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
      * Flush buffers and send accumulated messages to server
      */
     public void drainQueueAndSend() {
-        if (logzioSender != null) logzioSender.drainQueueAndSend();
+        if (logzioSender != null)
+            logzioSender.drainQueueAndSend();
     }
 
     @Override
     public void stop() {
-        if (logzioSender != null) logzioSender.stop();
-        if (throwableProxyConverter != null) throwableProxyConverter.stop();
+        if (logzioSender != null)
+            logzioSender.stop();
+        if (throwableProxyConverter != null)
+            throwableProxyConverter.stop();
         super.stop();
     }
 
@@ -421,7 +448,8 @@ public class LogzioLogbackAppender extends UnsynchronizedAppenderBase<ILoggingEv
             logMessage.addProperty(MESSAGE, loggingEvent.getFormattedMessage());
         }
 
-        // Adding MDC first, as I dont want it to collide with any one of the following fields
+        // Adding MDC first, as I dont want it to collide with any one of the following
+        // fields
         if (loggingEvent.getMDCPropertyMap() != null) {
             loggingEvent.getMDCPropertyMap().forEach(logMessage::addProperty);
         }
