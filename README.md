@@ -70,7 +70,7 @@ For advanced control over the background threads used for sending logs, you can 
     <appender name="LogzioLogbackAppender" class="io.logz.logback.LogzioLogbackAppender">
         <token>yourlogziopersonaltokenfromsettings</token>
         <logzioType>myAdvancedType</logzioType>
-        <logzioUrl>[https://listener.logz.io:8071](https://listener.logz.io:8071)</logzioUrl>
+        <logzioUrl>https://listener.logz.io:8071</logzioUrl>
 
         <executor class="java.util.concurrent.ScheduledThreadPoolExecutor">
             <corePoolSize>3</corePoolSize> <threadFactory class="com.google.common.util.concurrent.ThreadFactoryBuilder">
