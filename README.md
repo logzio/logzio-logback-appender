@@ -14,7 +14,7 @@ JDK 11 and above:
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>2.2.0</version>
+    <version>2.3.0</version>
 </dependency>
 ```
 
@@ -59,6 +59,38 @@ Logback appender also requires logback classic:
 </configuration>
 ```
 
+### Advanced Configuration: Custom Executor Example
+
+For advanced control over the background threads used for sending logs, you can provide your own `ScheduledExecutorService`. This allows tuning thread pool size, thread factory, etc.
+
+```xml
+<configuration>
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+
+    <appender name="LogzioLogbackAppender" class="io.logz.logback.LogzioLogbackAppender">
+        <token>yourlogziopersonaltokenfromsettings</token>
+        <logzioType>myAdvancedType</logzioType>
+        <logzioUrl>https://listener.logz.io:8071</logzioUrl>
+
+        <executor class="java.util.concurrent.ScheduledThreadPoolExecutor">
+            <corePoolSize>3</corePoolSize> <threadFactory class="com.google.common.util.concurrent.ThreadFactoryBuilder">
+                <daemon>true</daemon>
+                <nameFormat>my-logzio-sender-%d</nameFormat>
+            </threadFactory>
+        </executor>
+
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+
+    <root level="debug">
+        <appender-ref ref="LogzioLogbackAppender"/>
+    </root>
+</configuration>
+
+Note: When providing a custom <executor>, you are responsible for ensuring its configuration is valid. If configured via XML as shown, Logback typically handles the executor's shutdown. The appender itself will not shut down an executor provided to it via this configuration method.
+
 ### Parameters
 | Parameter                   | Default                         | Explained                                                                                                                                                                                                                                                                                                                                                                                                                 |
 |-----------------------------|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -72,6 +104,7 @@ Logback appender also requires logback classic:
 | **additionalFields**        | *None*                          | Optional. Allows to add additional fields to the JSON message sent. The format is "fieldName1=fieldValue1;fieldName2=fieldValue2". You can optionally inject an environment variable value using the following format: "fieldName1=fieldValue1;fieldName2=$ENV_VAR_NAME". In that case, the environment variable should be the only value. In case the environment variable can't be resolved, the field will be omitted. |
 | **addOpentelemetryContext** | *true*                          | Optional. Add `trace_id`, `span_id`, `service_name` fields to logs when opentelemetry context is available.                                                                                                                                                                                                                                                                                                               |
 | **debug**                   | *false*                         | Print some debug messages to stdout to help to diagnose issues                                                                                                                                                                                                                                                                                                                                                            |
+| **`<executor>` (tag)** | *None* (Uses Logback default)   | Optional. Allows specifying a custom `java.util.concurrent.ScheduledExecutorService` implementation (e.g., `ScheduledThreadPoolExecutor`) via nested XML tags for background log sending tasks. See advanced configuration example above. |
 | **line**                    | *false*                         | Print the line of code that generated this log                                                                                                                                                                                                                                                                                                                                                                            |
 | **compressRequests**        | *false*                         | Boolean. `true` if logs are compressed in gzip format before sending. `false` if logs are sent uncompressed.                                                                                                                                                                                                                                                                                                              |
 | **format**                  | *text*                          | Optional. `json` if the logged message is to be parsed as a JSON (in such a way that each JSON node will be a field in logz.io) or `text` if the logged message is to be treated as plain text.                                                                                                                                                                                                                           |
@@ -194,6 +227,9 @@ If you're sending traces with OpenTelemetry instrumentation (auto or manual), yo
   ```
 
 ### Release notes
+ - 2.3.0
+   - Added `<executor>` configuration option to allow specifying a custom `ScheduledExecutorService` for background log sending tasks.
+
  - 2.2.0
     -  Updated LogzioSender version to `2.2.0`
         - Add `addOpentelemetryContext` option, to add `trace_id`, `span_id`, `service_name` fields to logs when opentelemetry context is available.
