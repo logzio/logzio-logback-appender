@@ -22,7 +22,7 @@ jobs:
           gpg-passphrase: GPG_PASSPHRASE
       - name: Publish to the Maven Central Repository
         env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: mvn deploy --batch-mode -D skipTests --activate-profiles release --no-transfer-progress
