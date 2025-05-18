@@ -14,7 +14,7 @@ JDK 11 and above:
 <dependency>
     <groupId>io.logz.logback</groupId>
     <artifactId>logzio-logback-appender</artifactId>
-    <version>2.3.0</version>
+    <version>2.4.0</version>
 </dependency>
 ```
 
@@ -33,7 +33,7 @@ Logback appender also requires logback classic:
 <dependency>
     <groupId>ch.qos.logback</groupId>
     <artifactId>logback-classic</artifactId>
-    <version>1.5.12</version>
+    <version>1.5.18</version>
 </dependency>
 ```
 
@@ -227,6 +227,10 @@ If you're sending traces with OpenTelemetry instrumentation (auto or manual), yo
   ```
 
 ### Release notes
+- 2.4.0
+  - Updated LogzioSender version to `2.3.0`
+    - Upgrade dependencies
+  - Upgrade dependencies
  - 2.3.0
    - Added `<executor>` configuration option to allow specifying a custom `ScheduledExecutorService` for background log sending tasks.
 
