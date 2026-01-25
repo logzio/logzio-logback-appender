@@ -111,8 +111,7 @@ jobs:
           
           echo "API Response: $RESPONSE"
           
-          # Check if we got hits
-          HITS=$(echo "$RESPONSE" | jq -r '.hits.total.value // .hits.total // 0')
+          HITS=$(echo "$RESPONSE" | jq -r 'if .hits.total | type == "object" then .hits.total.value else .hits.total end // 0')
           
           if [ "$HITS" -eq 0 ]; then
             echo "::error::No logs found with env_id: $ENV_ID"
