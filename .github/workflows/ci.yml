@@ -1,0 +1,164 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  test:
+    name: Test (Java ${{ matrix.java }} / ${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        java: ['11', '17', '21']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java }}
+          cache: maven
+
+      - name: Run tests with coverage
+        run: mvn test jacoco:report --batch-mode --no-transfer-progress
+
+      - name: Upload coverage report
+        if: matrix.os == 'ubuntu-latest' && matrix.java == '17'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: target/site/jacoco/
+          retention-days: 7
+
+  e2e-integration:
+    name: E2E Integration Tests
+    needs: [test]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      LOGZIO_TOKEN: ${{ secrets.LOGZIO_TOKEN }}
+      LOGZIO_API_KEY: ${{ secrets.LOGZIO_API_KEY }}
+      LOGZIO_API_URL: ${{ secrets.LOGZIO_API_URL || 'https://api.logz.io/v1' }}
+      ENV_ID: e2e-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: maven
+
+      - name: Build package
+        run: mvn package -DskipTests --batch-mode --no-transfer-progress
+
+      - name: Check required secrets
+        id: check-secrets
+        run: |
+          if [ -z "$LOGZIO_TOKEN" ] || [ -z "$LOGZIO_API_KEY" ]; then
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            echo "::warning::LOGZIO_TOKEN or LOGZIO_API_KEY not configured. Skipping E2E tests."
+          else
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send test logs to Logz.io
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        run: |
+          mvn exec:java -Dexec.mainClass="io.logz.logback.E2EIntegrationTest" \
+            -Dexec.classpathScope=test \
+            --batch-mode --no-transfer-progress
+
+      - name: Wait for log ingestion
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        run: |
+          echo "Waiting 180 seconds for log ingestion..."
+          sleep 180
+
+      - name: Query Logz.io API to validate logs
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        run: |
+          echo "Querying Logz.io API for logs with env_id: $ENV_ID"
+          
+          RESPONSE=$(curl -s -X POST "${LOGZIO_API_URL:-https://api.logz.io/v1}/search" \
+            -H "X-API-TOKEN: $LOGZIO_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "query": {
+                "bool": {
+                  "must": [
+                    {"match": {"type": "'"$ENV_ID"'"}},
+                    {"match": {"env_id": "'"$ENV_ID"'"}}
+                  ]
+                }
+              },
+              "size": 10
+            }')
+          
+          echo "API Response: $RESPONSE"
+          
+          # Check if we got hits
+          HITS=$(echo "$RESPONSE" | jq -r '.hits.total.value // .hits.total // 0')
+          
+          if [ "$HITS" -eq 0 ]; then
+            echo "::error::No logs found with env_id: $ENV_ID"
+            exit 1
+          fi
+          
+          echo "✅ Found $HITS logs with env_id: $ENV_ID"
+          
+          # Validate required fields
+          FIRST_HIT=$(echo "$RESPONSE" | jq -r '.hits.hits[0]._source')
+          echo "Sample log: $FIRST_HIT"
+          
+          MESSAGE=$(echo "$FIRST_HIT" | jq -r '.message // empty')
+          TIMESTAMP=$(echo "$FIRST_HIT" | jq -r '.["@timestamp"] // empty')
+          
+          if [ -z "$MESSAGE" ]; then
+            echo "::error::Log missing 'message' field"
+            exit 1
+          fi
+          
+          if [ -z "$TIMESTAMP" ]; then
+            echo "::error::Log missing '@timestamp' field"
+            exit 1
+          fi
+          
+          echo "✅ All required fields validated successfully"
+
+      - name: E2E test skipped (no secrets)
+        if: steps.check-secrets.outputs.has_secrets == 'false'
+        run: echo "E2E tests skipped - secrets not configured"
+
+  ci-success:
+    name: CI Success
+    needs: [test, e2e-integration]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "::error::Test job failed"
+            exit 1
+          fi
+          
+          # E2E is optional (may be skipped if secrets not configured)
+          if [ "${{ needs.e2e-integration.result }}" == "failure" ]; then
+            echo "::error::E2E integration job failed"
+            exit 1
+          fi
+          
+          echo "✅ All required CI checks passed!"
+
