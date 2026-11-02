@@ -37,7 +37,7 @@
 
     <properties>
         <logzio-sender-version>2.4.0</logzio-sender-version>
-        <jacoco.version>0.8.15</jacoco.version>
+        <jacoco.version>0.8.16</jacoco.version>
     </properties>
     <distributionManagement>
         <snapshotRepository>
@@ -210,7 +210,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.6.5</version>
+            <version>1.6.6</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
